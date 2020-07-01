@@ -185,6 +185,9 @@ class ArgumentsTrainTestLocalisation():
                  csv_dir='/home/igr18/Work/PycharmProjects/DomainAdaptationSeg/data/',
                  results_dir='/data/project/PIPPI2020/DACycleGAN/results/',
                  checkpoint_dir='/data/project/PIPPI2020/DACycleGAN/checkpoints/',
+                 train_csv='new_data_localisation_train.csv',
+                 valid_csv='new_data_localisation_valid.csv',
+                 test_csv='new_data_localisation_test.csv',
                  norm='instance',
                  exp_name='test',
                  task_net='unet_128', ntf=32,
@@ -207,6 +210,9 @@ class ArgumentsTrainTestLocalisation():
         self.csv_dir = csv_dir
         self.results_dir = results_dir
         self.checkpoint_dir = checkpoint_dir
+        self.train_csv = train_csv
+        self.valid_csv = valid_csv
+        self.test_csv = test_csv
         self.norm = norm
         self.root_dir = root_dir
         self.task_net = task_net

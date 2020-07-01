@@ -248,7 +248,7 @@ class LocalisationNetwork(object):
         # Loaders
         #####################################################
         transformed_dataset_train = LocalisationDataLoader(
-            csv_file=args.csv_dir + '/new_data_localisation_train.csv',
+            csv_file=args.csv_dir + args.train_csv,
             root_dir=args.root_dir,
             shuffle=True,
             is_augment=True,
@@ -258,7 +258,7 @@ class LocalisationNetwork(object):
                                                        is_random=True),
                                           ToTensor()]))
         transformed_dataset_valid = LocalisationDataLoader(
-            csv_file=args.csv_dir + '/new_data_localisation_valid.csv',
+            csv_file=args.csv_dir + args.valid_csv,
             root_dir=args.root_dir,
             shuffle=True,
             is_augment=True,
@@ -268,7 +268,7 @@ class LocalisationNetwork(object):
                                                        is_random=True),
                                           ToTensor()]))
         transformed_dataset_test = LocalisationDataLoader(
-            csv_file=args.csv_dir + '/new_data_localisation_test.csv',
+            csv_file=args.csv_dir + args.test_csv,
             root_dir=args.root_dir,
             shuffle=False,
             is_augment=False,
