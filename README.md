@@ -27,10 +27,11 @@ You need to modify:
 * *checkpoint_dir* is a path where the checkpoints will be stored
 
 ### Example csv file:
-t2w,lab
-brain-10/2d-res-stack1.nii.gz,brain-10/2d-res-mask1.nii.gz
-brain-10/2d-res-stack2.nii.gz,brain-10/2d-res-mask2.nii.gz
-brain-10/2d-res-stack3.nii.gz,brain-10/2d-res-mask3.nii.gz
-brain-10/2d-res-stack4.nii.gz,brain-10/2d-res-mask4.nii.gz
-brain-10/2d-res-stack5.nii.gz,brain-10/2d-res-mask5.nii.gz
-...
+	t2w,lab
+	brain-10/2d-res-stack1.nii.gz,brain-10/2d-res-mask1.nii.gz
+	brain-10/2d-res-stack2.nii.gz,brain-10/2d-res-mask2.nii.gz
+	brain-10/2d-res-stack3.nii.gz,brain-10/2d-res-mask3.nii.gz
+	brain-10/2d-res-stack4.nii.gz,brain-10/2d-res-mask4.nii.gz
+	brain-10/2d-res-stack5.nii.gz,brain-10/2d-res-mask5.nii.gz
+	...
+
