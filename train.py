@@ -41,11 +41,9 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
                                       results_dir='/data/project/Localisation/results/',
                                       checkpoint_dir='/data/project/Localisation/checkpoints/',
                                       norm='instance',
-                                      exp_name='Localisation_06_02',
-                                      task_net='unet_128',
-                                      ntf=64,
-                                      n_classes=1,
-                                      no_dropout=False)
+                                      exp_name='Localisation_07_01',
+                                      task_net='unet_2D',
+                                      n_classes=1)
 
 args.gpu_ids = [0]
 

@@ -11,7 +11,7 @@
 import copy
 import os
 import matplotlib.pyplot as plt
-
+from scipy.ndimage import distance_transform_edt, distance_transform_cdt, gaussian_filter
 import numpy as np
 import torch
 
@@ -66,6 +66,39 @@ def print_networks(nets, names):
     print('-----------------------------------------------')
 
 
+# ==================================================================================================================== #
+#
+#  My code:
+#
+# ==================================================================================================================== #
+def normalise_a_b(data_, a=-1, b=1):
+    return (b-a) * (data_ - np.min(data_)) / (np.max(data_) - np.min(data_) + 1e-6) + a
+
+
+def apply_distance_transform(lab_):
+    '''
+    Expected size of image n_batches x n_channels x n_x x n_y
+    :param lab_:
+    :return:
+    '''
+    if len(lab_.shape) > 4:
+        print('[ERROR] Unimplemented size')
+        return None
+
+    nb, nc, _, _ = lab_.shape
+    distance_map = np.zeros_like(lab_)
+
+    for i in np.arange(0, nb):
+        for j in np.arange(0, nc):
+            map_current = distance_transform_edt(lab_[i, j, :, :])
+            distance_map[i, j, :, :] = normalise_a_b(map_current, a=-1, b=1)  # * \
+            # normalise_a_b(gaussian_filter(lab_[i, j, :, :],
+            #                               sigma=(15, 15)),
+            #               a=-1, b=1)
+
+    return torch.from_numpy(distance_map)
+
+
 # Plot predicted and ground truth segmentations together with image
 def plot_seg_img(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
     # Figure
@@ -90,7 +123,7 @@ def plot_seg_img(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
     plt.ylabel('GT Seg')
     plt.xticks([])
     plt.yticks([])
-    plt.title('E = ' + str(epoch_ + 1))
+    plt.title('E = ' + str(epoch_ + 1) + ' ' + args_.exp_name)
 
     # # # # # # IMG + PRED Segmentation
     plt.subplot(2, 1, 2)
@@ -111,6 +144,135 @@ def plot_seg_img(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
     plt.yticks([])
     plt.colorbar()
 
+
+    plt.show()
+
+
+# Plot predicted and ground truth segmentations together with image
+def plot_seg_img_map(args_, epoch_, seg_gt_, seg_pr_, map_gt_, map_pr_, t2w_gt_):
+    # Figure
+    plt.figure(figsize=(12, 8))
+
+    # # # # # # IMG + GT Segmentation
+    plt.subplot(4, 1, 1)
+    # IMG
+    seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
+    for i in range(seg_gt_.shape[0]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            t2w_gt_[i, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    # SEG
+    seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
+    for i in range(seg_gt_.shape[0]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            seg_gt_[i, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='seismic', alpha=0.6)
+
+    plt.colorbar()
+    plt.ylabel('GT Seg')
+    plt.xticks([])
+    plt.yticks([])
+    plt.title('E = ' + str(epoch_ + 1) + ' ' + args_.exp_name)
+
+    # # # # # # IMG + PRED Segmentation
+    plt.subplot(4, 1, 2)
+    # IMG
+    seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
+    for i in range(seg_gt_.shape[0]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            t2w_gt_[i, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    # PRED
+    seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
+    for i in range(seg_pr_.shape[0]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            seg_pr_[i, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='seismic', alpha=0.6)
+    plt.ylabel('PR Seg')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
+
+    # # # # # # IMG + GT Distance MAP
+    plt.subplot(4, 1, 3)
+    # SEG
+    seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
+    for i in range(map_gt_.shape[0]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            map_gt_[i, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=-1.0, vmax=1.0, cmap='jet') # , alpha=0.6)
+
+    plt.colorbar()
+    plt.ylabel('GT Map')
+    plt.xticks([])
+    plt.yticks([])
+
+    # # # # # # IMG + PRED Distance MAP
+    plt.subplot(4, 1, 4)
+    # PRED
+    seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
+    for i in range(map_pr_.shape[0]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            map_pr_[i, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=-1.0, vmax=1.0, cmap='jet') # , alpha=0.6)
+    plt.ylabel('PR Map')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
+
+
+    plt.show()
+
+
+def plot_seg_img_map_one(args_, epoch_, seg_gt_, seg_pr_, map_gt_, map_pr_, t2w_gt_):
+    # Figure
+    plt.figure(figsize=(12, 8))
+
+    # # # # # # IMG + GT Segmentation
+    plt.subplot(2, 2, 1)
+    # IMG
+    img_plot = t2w_gt_[0, 0, :, :].cpu().data
+    plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    # PRED
+    # seg_plot = gaussian_filter(seg_gt_[0, 0, :, :].cpu().data.numpy(), sigma=(5, 5))
+    seg_plot = seg_gt_[0, 0, :, :].cpu().data.numpy()
+    plt.imshow(seg_plot, vmin=0.0, vmax=1.0, cmap='seismic', alpha=0.6)
+    plt.ylabel('GT Seg')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
+    plt.title('E = ' + str(epoch_ + 1) + ' ' + args_.exp_name)
+
+    # # # # # # IMG + PRED Segmentation
+    plt.subplot(2, 2, 2)
+    # IMG
+    img_plot = t2w_gt_[0, 0, :, :].cpu().data
+    plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    # PRED
+    seg_plot = seg_pr_[0, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='seismic', alpha=0.6)
+    plt.ylabel('PR Seg')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
+
+    # # # # # # IMG + GT Distance MAP
+    plt.subplot(2, 2, 3)
+    seg_plot = map_gt_[0, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=-1.0, vmax=1.0, cmap='jet')
+    plt.colorbar()
+    plt.ylabel('GT Map')
+    plt.xticks([])
+    plt.yticks([])
+
+    # # # # # # IMG + PRED Distance MAP
+    plt.subplot(2, 2, 4)
+    seg_plot = map_pr_[0, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=-1.0, vmax=1.0, cmap='jet')
+    plt.ylabel('PR Map')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
 
     plt.show()
 
@@ -178,7 +340,8 @@ class ArgumentsTrainTestLocalisation():
                  crop_width=256,
                  crop_depth=256,
                  validation_steps=5,
-                 lamda=10,
+                 lamda=10.0,
+                 lamda2=1.0,
                  training=False,
                  testing=False,
                  root_dir='/data/project/dHCP_data_str4cls/3_resampled_rig/',
@@ -190,9 +353,8 @@ class ArgumentsTrainTestLocalisation():
                  test_csv='new_data_localisation_test.csv',
                  norm='instance',
                  exp_name='test',
-                 task_net='unet_128', ntf=32,
-                 n_classes=1,
-                 no_dropout=False):
+                 task_net='unet_2D',
+                 n_classes=1):
 
         self.epochs = epochs
         self.decay_epoch = decay_epoch
@@ -205,6 +367,7 @@ class ArgumentsTrainTestLocalisation():
         self.crop_depth = crop_depth
         self.exp_name = exp_name
         self.lamda = lamda
+        self.lamda2 = lamda2
         self.training = training
         self.testing = testing
         self.csv_dir = csv_dir
@@ -216,6 +379,4 @@ class ArgumentsTrainTestLocalisation():
         self.norm = norm
         self.root_dir = root_dir
         self.task_net = task_net
-        self.ntf = ntf
         self.n_classes = n_classes
-        self.no_dropout = no_dropout
