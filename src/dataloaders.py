@@ -100,6 +100,9 @@ class LocalisationDataLoader(Dataset):
         # Create sample
         img_ = transformed_subj['t2w']['data'][0, :, :, :].numpy().astype(np.float32)
         lab_ = transformed_subj['label']['data'][0, :, :, :].numpy().astype(np.float32)
+        lab_ = np.abs((lab_ - np.min(lab_)) / (np.max(lab_) - np.min(lab_) + 1e-6))
+        lab_[lab_ >= 0.5] = 1.0
+        lab_[lab_ < 0.5] = 0.0
         img_aff = transformed_subj['t2w']['affine']
         lab_aff = transformed_subj['label']['affine']
         subj_name = self.data_file.iloc[item, 0].split('.nii')[0]
