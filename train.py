@@ -19,7 +19,7 @@ from src import networks as md
 #
 # ==================================================================================================================== #
 
-N_epochs = 2500  # 1940  # 2500
+N_epochs = 500
 
 
 # # # Prepare arguments
@@ -38,9 +38,8 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
                                       train_csv='new_data_localisation_train.csv',
                                       valid_csv='new_data_localisation_valid.csv',
                                       test_csv='new_data_localisation_test.csv',
-                                      results_dir='/data/project/Localisation/results/',
-                                      checkpoint_dir='/data/project/Localisation/checkpoints/',
-                                      norm='instance',
+                                      results_dir='/data/project/Localisation/results-loc/',
+                                      checkpoint_dir='/data/project/Localisation/checkpoints-loc/',
                                       exp_name='Localisation_07_01',
                                       task_net='unet_2D',
                                       n_classes=1)
