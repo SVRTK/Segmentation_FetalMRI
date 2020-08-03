@@ -20,7 +20,7 @@ from src import networks as md
 #
 # ==================================================================================================================== #
 
-N_epochs = 500  # 1940  # 2500
+N_epochs = 500
 
 
 # # # Prepare arguments
@@ -42,7 +42,6 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
                                       test_csv='new_data_localisation_test.csv',
                                       results_dir='/data/project/Localisation/results-loc-dt/',
                                       checkpoint_dir='/data/project/Localisation/checkpoints-loc-dt/',
-                                      norm='instance',
                                       exp_name='Localisation_07_01_Dist',
                                       task_net='unet_2D_DT',
                                       n_classes=1)
