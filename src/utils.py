@@ -72,7 +72,10 @@ def print_networks(nets, names):
 #
 # ==================================================================================================================== #
 def normalise_a_b(data_, a=-1, b=1):
-    return (b-a) * (data_ - np.min(data_)) / (np.max(data_) - np.min(data_) + 1e-6) + a
+    if torch.is_tensor(data_):
+        return (b - a) * (data_ - torch.min(data_)) / (torch.max(data_) - torch.min(data_) + 1e-6) + a
+    else:
+        return (b - a) * (data_ - np.min(data_)) / (np.max(data_) - np.min(data_) + 1e-6) + a
 
 
 def apply_distance_transform(lab_):
@@ -112,6 +115,7 @@ def plot_seg_img(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
         seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
             t2w_gt_[i, 0, :, :].cpu().data
     plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+
     # SEG
     seg_plot = torch.zeros((args_.crop_width, args_.batch_size * args_.crop_height))
     for i in range(seg_gt_.shape[0]):
@@ -144,6 +148,52 @@ def plot_seg_img(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
     plt.yticks([])
     plt.colorbar()
 
+
+    plt.show()
+
+
+def plot_seg_img_labels(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
+    # Figure
+    plt.figure(figsize=(8, 4))
+
+    # # # # # # IMG + GT Segmentation
+    plt.subplot(2, 1, 1)
+    # IMG
+    seg_plot = torch.zeros((args_.crop_width, args_.n_classes * args_.crop_height))
+    for i in range(seg_gt_.shape[1]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            t2w_gt_[0, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    # SEG
+    seg_plot = torch.zeros((args_.crop_width, args_.n_classes * args_.crop_height))
+    for i in range(seg_gt_.shape[1]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            seg_gt_[0, i, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='seismic', alpha=0.4)
+    plt.colorbar()
+    plt.ylabel('GT Seg')
+    plt.xticks([])
+    plt.yticks([])
+    plt.title('E = ' + str(epoch_ + 1) + ' ' + args_.exp_name)
+
+    # # # # # # IMG + PRED Segmentation
+    plt.subplot(2, 1, 2)
+    # IMG
+    seg_plot = torch.zeros((args_.crop_width, args_.n_classes * args_.crop_height))
+    for i in range(seg_gt_.shape[1]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            t2w_gt_[0, 0, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    # PRED
+    seg_plot = torch.zeros((args_.crop_width, args_.n_classes * args_.crop_height))
+    for i in range(seg_pr_.shape[1]):
+        seg_plot[:, i * args_.crop_height:i * args_.crop_height + args_.crop_height] = \
+            seg_pr_[0, i, :, :].cpu().data
+    plt.imshow(seg_plot.numpy(), vmin=0.0, vmax=1.0, cmap='seismic', alpha=0.4)
+    plt.ylabel('PR Seg')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
 
     plt.show()
 
@@ -351,7 +401,6 @@ class ArgumentsTrainTestLocalisation():
                  train_csv='new_data_localisation_train.csv',
                  valid_csv='new_data_localisation_valid.csv',
                  test_csv='new_data_localisation_test.csv',
-                 norm='instance',
                  exp_name='test',
                  task_net='unet_2D',
                  n_classes=1):
@@ -376,7 +425,6 @@ class ArgumentsTrainTestLocalisation():
         self.train_csv = train_csv
         self.valid_csv = valid_csv
         self.test_csv = test_csv
-        self.norm = norm
         self.root_dir = root_dir
         self.task_net = task_net
         self.n_classes = n_classes
