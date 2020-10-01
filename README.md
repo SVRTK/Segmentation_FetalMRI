@@ -3,6 +3,11 @@
 Solutions for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
 
 
+## Contacts
+
+In case of any questions regarding the code - please report an issue or contact Irina Grigorescu. 
+
+
 ## Quick how-to: setup
 
 	conda env create -f environment.yml
@@ -41,12 +46,5 @@ Solutions for localisation and segmentation in fetal MRI stacks or motion-correc
     - I_size=<image_size>
     - N_classes=<number_of_labels+1(bg_label)>
     - ...
-
-
-
-## Contacts
-
-In case of any questions regarding the code - please report an issue or contact Irina Grigorescu. 
-
 
 
