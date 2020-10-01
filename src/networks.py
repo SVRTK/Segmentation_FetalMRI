@@ -475,10 +475,14 @@ class LocalisationNetwork3DMultipleLabels(object):
                             out_prob = self.Loc(img_input)
                             plt.figure(figsize=(3*(self.n_labels + 1), 3))
                             
+                            
+                            
+                            plot_range = self.n_labels + 1
+                            
                             # plot probabilities
-                            for l in range(self.n_labels + 1):
-                                plt.subplot(1,(self.n_labels + 1),l)
-                                plt.imshow(out_prob.cpu().data.numpy()[0,0,:,:,args.crop_depth//2])
+                            for l in range(plot_range):
+                                plt.subplot(1,plot_range,l+1)
+                                plt.imshow(out_prob.cpu().data.numpy()[0,l,:,:,args.crop_depth//2])
                                 plt.colorbar()
                                 
                             plt.show()
@@ -633,7 +637,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
                 nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + ii + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
 
                 # Save as nib file - SEG GT
                 gt_lab = nib.Nifti1Image(seg_gt_, img_tmp_info.affine, img_tmp_info.header)
@@ -652,7 +656,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
                 nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + ii + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
                                 
                 # Save as nib file - SEG GT
                 gt_lab = nib.Nifti1Image(seg_gt_, img_tmp_info.affine, img_tmp_info.header)
@@ -684,6 +688,9 @@ class LocalisationNetwork3DMultipleLabels(object):
             def displ_res_all(img_gt_, seg_gt_, seg_pr_, prob_out_, pos_, n_labels_):
             
             
+                l_num = n_labels_
+                plot_range = n_labels_
+            
                 plt.figure(figsize=((3*(3+n_labels_)), 9))
                 
                 M=3
@@ -709,7 +716,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 plt.title('XY: PRED')
                 plt.colorbar()
 
-                for l in range(n_labels_):
+                for l in range(plot_range):
                     z=z+1
                     plt.subplot(M,N,z)
                     plt.imshow(prob_out_.cpu().data.numpy()[0,l+1,:,:,pos_], vmin=0, vmax=100)
@@ -737,7 +744,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 plt.title('XZ: PRED')
                 plt.colorbar()
                 
-                for l in range(n_labels_):
+                for l in range(plot_range):
                     z=z+1
                     plt.subplot(M,N,z)
                     plt.imshow(prob_out_.cpu().data.numpy()[0,l+1,:,pos_,:], vmin=0, vmax=100)
@@ -769,7 +776,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 plt.title('YZ: PRED')
                 plt.colorbar()
                 
-                for l in range(n_labels_):
+                for l in range(plot_range):
                     z=z+1
                     plt.subplot(M,N,z)
                     plt.imshow(prob_out_.cpu().data.numpy()[0,l+1,pos_,:,:], vmin=0, vmax=100)
@@ -813,7 +820,7 @@ class LocalisationNetwork3DMultipleLabels(object):
 
         # Inference - go through each test data
         #####################################################
-        for i, data_point in enumerate(self.dataloaders['test']):
+        for i, data_point in enumerate(self.dataloaders['run']):
             
 
             # Fetch middle slices from the data
@@ -861,7 +868,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
                 nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + ii + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
 
                 # Save as nib file - SEG PR
                 pr_lab = nib.Nifti1Image(seg_pr_, img_tmp_info.affine, img_tmp_info.header)
@@ -876,7 +883,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
                 nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + ii + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '.nii.gz')
                                 
                 # Save as nib file - SEG PR
                 pr_lab = nib.Nifti1Image(seg_pr_, img_tmp_info.affine, img_tmp_info.header)
@@ -906,6 +913,8 @@ class LocalisationNetwork3DMultipleLabels(object):
             # # # # # # # # # # # # # # # # # # # # # # # #
             def displ_res_all(img_gt_, seg_pr_, prob_out_, pos_, n_labels_):
             
+                plot_range = n_labels_
+                l_num = n_labels_
             
                 plt.figure(figsize=((3*(2+n_labels_)), 9))
                 
@@ -925,7 +934,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 plt.title('XY: PRED')
                 plt.colorbar()
 
-                for l in range(n_labels_):
+                for l in range(plot_range):
                     z=z+1
                     plt.subplot(M,N,z)
                     plt.imshow(prob_out_.cpu().data.numpy()[0,l+1,:,:,pos_], vmin=0, vmax=100)
@@ -947,7 +956,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 plt.title('XZ: PRED')
                 plt.colorbar()
                 
-                for l in range(n_labels_):
+                for l in range(plot_range):
                     z=z+1
                     plt.subplot(M,N,z)
                     plt.imshow(prob_out_.cpu().data.numpy()[0,l+1,:,pos_,:], vmin=0, vmax=100)
@@ -969,7 +978,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 plt.title('YZ: PRED')
                 plt.colorbar()
                 
-                for l in range(n_labels_):
+                for l in range(plot_range):
                     z=z+1
                     plt.subplot(M,N,z)
                     plt.imshow(prob_out_.cpu().data.numpy()[0,l+1,pos_,:,:], vmin=0, vmax=100)

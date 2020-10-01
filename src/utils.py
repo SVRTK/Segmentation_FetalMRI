@@ -406,6 +406,7 @@ class ArgumentsTrainTestLocalisation():
                  lamda2=1.0,
                  training=False,
                  testing=False,
+                 running=False,
                  root_dir='/data/projects/localisation/data/',
                  csv_dir='/data/projects/localisation/data/',
                  results_dir='data/project/localisation/network_results/results-3D-2lab-loc/',
@@ -432,6 +433,7 @@ class ArgumentsTrainTestLocalisation():
         self.lamda2 = lamda2
         self.training = training
         self.testing = testing
+        self.running = running
         self.csv_dir = csv_dir
         self.results_dir = results_dir
         self.checkpoint_dir = checkpoint_dir
@@ -442,3 +444,4 @@ class ArgumentsTrainTestLocalisation():
         self.root_dir = root_dir
         self.task_net = task_net
         self.n_classes = n_classes
+
