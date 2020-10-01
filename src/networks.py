@@ -856,7 +856,7 @@ class LocalisationNetwork3DMultipleLabels(object):
             
             
             # # # # # # # # # # # # # # # # # # # # # # # #
-            def save_nii_img_seg(args_, name_, img_gt_, seg_pr_, img_aff_, seg_aff_, ind):
+            def save_nii_img_seg(args_, name_, img_gt_, seg_pr_, img_aff_, ind):
 
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
@@ -871,7 +871,7 @@ class LocalisationNetwork3DMultipleLabels(object):
 
 
             # # # # # # # # # # # # # # # # # # # # # # # #
-            def save_nii_img_seg_prob(args_, name_, img_gt_, seg_pr_, img_aff_, seg_aff_, prob_out_, n_labels_, ind):
+            def save_nii_img_seg_prob(args_, name_, img_gt_, seg_pr_, img_aff_, prob_out_, n_labels_, ind):
 
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
@@ -896,7 +896,10 @@ class LocalisationNetwork3DMultipleLabels(object):
 
 
   
-            save_nii_img_seg(args, name, img_gt, seg_pr, img_aff, seg_aff, i)
+#            save_nii_img_seg(args, name, img_gt, seg_pr, img_aff, i)
+            
+            save_nii_img_seg_prob(args, name, img_gt, seg_pr, img_aff, out_prob, self.n_labels, i)
+            
             
   
             

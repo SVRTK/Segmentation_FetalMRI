@@ -85,7 +85,7 @@ if args.testing:
 
 
 
-if args.testing:
+if args.running:
     print("Running")
     model = md.LocalisationNetwork3DMultipleLabels(args)
 
