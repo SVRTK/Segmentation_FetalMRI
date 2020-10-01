@@ -1,12 +1,27 @@
+
+# SVRTK : SVR reconstruction based on MIRTK and CNN-based processing for fetal MRI
 #
-# Author: Irina Grigorescu
-# Date:      02-06-2020
+# Copyright 2018-2020 King's College London
 #
-# Utility functions for training
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Some code from:
-#      https://github.com/arnab39/cycleGAN-PyTorch/blob/master/utils.py
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# see the License for the specific language governing permissions and
+# limitations under the License.
+
+
+
+# ==================================================================================================================== #
+#
+#     Part of the code adapted from: https://github.com/arnab39/cycleGAN-PyTorch/blob/master/utils.py
+#
+# ==================================================================================================================== #
 
 import copy
 import os
@@ -65,12 +80,10 @@ def print_networks(nets, names):
         i=i+1
     print('-----------------------------------------------')
 
+#
+# ==================================================================================================================== #
+#
 
-# ==================================================================================================================== #
-#
-#  My code:
-#
-# ==================================================================================================================== #
 def normalise_a_b(data_, a=-1, b=1):
     if torch.is_tensor(data_):
         return (b - a) * (data_ - torch.min(data_)) / (torch.max(data_) - torch.min(data_) + 1e-6) + a
@@ -147,8 +160,7 @@ def plot_seg_img(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
     plt.xticks([])
     plt.yticks([])
     plt.colorbar()
-
-
+    
     plt.show()
 
 
@@ -374,57 +386,3 @@ def plot_losses_train(args, losses_train, title_plot):
 
 
 
-# ==================================================================================================================== #
-#
-# CLASS FOR TRAIN/TEST ARGUMENTS - can be transformed easily into arguments parser for command line interface
-#
-# ==================================================================================================================== #
-class ArgumentsTrainTestLocalisation():
-    def __init__(self,
-                 epochs=100,
-                 decay_epoch=1,
-                 batch_size=1,
-                 lr=0.0002,
-                 gpu_ids=0,
-                 crop_height=256,
-                 crop_width=256,
-                 crop_depth=256,
-                 validation_steps=5,
-                 lamda=10.0,
-                 lamda2=1.0,
-                 training=False,
-                 testing=False,
-                 root_dir='/data/project/dHCP_data_str4cls/3_resampled_rig/',
-                 csv_dir='/home/igr18/Work/PycharmProjects/DomainAdaptationSeg/data/',
-                 results_dir='/data/project/PIPPI2020/DACycleGAN/results/',
-                 checkpoint_dir='/data/project/PIPPI2020/DACycleGAN/checkpoints/',
-                 train_csv='new_data_localisation_train.csv',
-                 valid_csv='new_data_localisation_valid.csv',
-                 test_csv='new_data_localisation_test.csv',
-                 exp_name='test',
-                 task_net='unet_2D',
-                 n_classes=1):
-
-        self.epochs = epochs
-        self.decay_epoch = decay_epoch
-        self.batch_size = batch_size
-        self.lr = lr
-        self.validation_steps = validation_steps
-        self.gpu_ids = gpu_ids
-        self.crop_height = crop_height
-        self.crop_width = crop_width
-        self.crop_depth = crop_depth
-        self.exp_name = exp_name
-        self.lamda = lamda
-        self.lamda2 = lamda2
-        self.training = training
-        self.testing = testing
-        self.csv_dir = csv_dir
-        self.results_dir = results_dir
-        self.checkpoint_dir = checkpoint_dir
-        self.train_csv = train_csv
-        self.valid_csv = valid_csv
-        self.test_csv = test_csv
-        self.root_dir = root_dir
-        self.task_net = task_net
-        self.n_classes = n_classes

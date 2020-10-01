@@ -1,4 +1,7 @@
-# Localisation -- under development -- not for use at the moment
+# Localisation for fetal MRI -- under development 
+
+This reposity provides a solution for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
+
 
 ## Quick how-to (not tested):
 
@@ -26,12 +29,18 @@ You need to modify:
 * *results_dir* is a path where the results will be stored
 * *checkpoint_dir* is a path where the checkpoints will be stored
 
+
 ### Example csv file:
-	t2w,lab
-	brain-10/2d-res-stack1.nii.gz,brain-10/2d-res-mask1.nii.gz
-	brain-10/2d-res-stack2.nii.gz,brain-10/2d-res-mask2.nii.gz
-	brain-10/2d-res-stack3.nii.gz,brain-10/2d-res-mask3.nii.gz
-	brain-10/2d-res-stack4.nii.gz,brain-10/2d-res-mask4.nii.gz
-	brain-10/2d-res-stack5.nii.gz,brain-10/2d-res-mask5.nii.gz
+    t2w, lab1, lab2
+    resampled-datasets/100067/stack.nii.gz    resampled-datasets/100067/mask-1.nii.gz    resampled-datasets/100067/mask-2.nii.gz
+    resampled-datasets/100072/stack.nii.gz    resampled-datasets/100072/mask-1.nii.gz    resampled-datasets/100072/mask-2.nii.gz
+    resampled-datasets/100074/stack.nii.gz    resampled-datasets/100074/mask-1.nii.gz    resampled-datasets/100074/mask-2.nii.gz
+    resampled-datasets/100078/stack.nii.gz    resampled-datasets/100078/mask-1.nii.gz    resampled-datasets/100078/mask-2.nii.gz
 	...
+
+
+## Contacts
+
+In case of any questions regarding the code - please report an issue or contact Irina Grigorescu. 
+
 
