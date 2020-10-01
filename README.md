@@ -3,14 +3,14 @@
 This reposity provides a solution for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
 
 
-## Quick how-to (not tested):
+## Quick how-to: setup
 
 	conda env create -f environment.yml
 	conda env list
 	conda activate Segmentation_FetalMRI
 
 
-## Quick how-to running train.py
+## Quick how-to: running train.py
 
 You need to modify:
 1. root_dir=<your_own_path>
