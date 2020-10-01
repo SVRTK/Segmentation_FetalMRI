@@ -1,4 +1,4 @@
-name: Localisation
+name: Segmentation_FetalMRI
 channels:
   - pytorch
   - defaults
