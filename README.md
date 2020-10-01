@@ -17,7 +17,7 @@ In case of any questions regarding the code - please report an issue or contact 
 
 ## Quick how-to: running train_3D_Segmentation.py
 
-1. Prepare datasets for 3D localisation/segmentation - resampled stacks and the binary label masks
+1. Prepare datasets for 3D localisation/segmentation - resampled (and padded) stacks and binary label masks
 
 	i_size=128   
 	mkdir res_datasets/${case_id}   
