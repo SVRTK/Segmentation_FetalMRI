@@ -17,7 +17,7 @@ In case of any questions regarding the code - please report an issue or contact 
 
 ## Quick how-to: running train_3D_Segmentation.py
 
-1. Prepare datasets for 3D localisation/segmentation - resampled (and padded) stacks and binary label masks
+1. Prepare datasets for 3D localisation/segmentation - resampled (and padded) stacks and binary label masks:
 
 	i_size=128   
 	mkdir res_datasets/${case_id}   
@@ -26,7 +26,7 @@ In case of any questions regarding the code - please report an issue or contact 
 	mirtk pad-3d org_datasets/${case_id}/mask-2.nii.gz res_datasets/${case_id}/mask-2.nii.gz ${i_size} 0   
 	...
 
-2. Prepare .csv files for training, validation, testing and running
+2. Prepare .csv files for training, validation, testing and running (see the example files):
 
     t2w                                       lab1                                       lab2   
     res-datasets/100027/stack.nii.gz    res-datasets/100027/mask-1.nii.gz    res-datasets/100027/mask-2.nii.gz   
