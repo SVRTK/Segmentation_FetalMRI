@@ -386,3 +386,59 @@ def plot_losses_train(args, losses_train, title_plot):
 
 
 
+# ==================================================================================================================== #
+#
+# CLASS FOR TRAIN/TEST ARGUMENTS - can be transformed easily into arguments parser for command line interface
+#
+# ==================================================================================================================== #
+class ArgumentsTrainTestLocalisation():
+    def __init__(self,
+                 epochs=100,
+                 decay_epoch=1,
+                 batch_size=2,
+                 lr=0.0002,
+                 gpu_ids=0,
+                 crop_height=128,
+                 crop_width=128,
+                 crop_depth=128,
+                 validation_steps=5,
+                 lamda=10.0,
+                 lamda2=1.0,
+                 training=False,
+                 testing=False,
+                 root_dir='/data/projects/localisation/data/',
+                 csv_dir='/data/projects/localisation/data/',
+                 results_dir='data/project/localisation/network_results/results-3D-2lab-loc/',
+                 checkpoint_dir='/data/project/localisation/network_results/checkpoints-3D-2lab-loc/',
+                 train_csv='data_localisation_2labels_train.csv',
+                 valid_csv='data_localisation_2labels_valid.csv',
+                 test_csv='data_localisation_2labels_brain_mixed_test.csv',
+                 run_csv='data_localisation_2labels_brain_mixed_run.csv',
+                 exp_name='test',
+                 task_net='unet_3D',
+                 n_classes=2):
+
+        self.epochs = epochs
+        self.decay_epoch = decay_epoch
+        self.batch_size = batch_size
+        self.lr = lr
+        self.validation_steps = validation_steps
+        self.gpu_ids = gpu_ids
+        self.crop_height = crop_height
+        self.crop_width = crop_width
+        self.crop_depth = crop_depth
+        self.exp_name = exp_name
+        self.lamda = lamda
+        self.lamda2 = lamda2
+        self.training = training
+        self.testing = testing
+        self.csv_dir = csv_dir
+        self.results_dir = results_dir
+        self.checkpoint_dir = checkpoint_dir
+        self.train_csv = train_csv
+        self.valid_csv = valid_csv
+        self.test_csv = test_csv
+        self.run_csv = run_csv
+        self.root_dir = root_dir
+        self.task_net = task_net
+        self.n_classes = n_classes

@@ -244,7 +244,7 @@ class LocalisationNetwork3DMultipleLabels(object):
 
         utils.print_networks([self.Loc], ['Loc'])
 
-        self.n_labels = output_nc - 1
+        self.n_labels = args.n_classes - 1
 
         # Define Loss criterias
         self.MSE = nn.MSELoss()
@@ -331,7 +331,7 @@ class LocalisationNetwork3DMultipleLabels(object):
         self.dataloaders = {
             'train': DataLoader(transformed_dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4),
             'valid': DataLoader(transformed_dataset_valid, batch_size=1, shuffle=False, num_workers=1),
-            'test': DataLoader(transformed_dataset_test, batch_size=1, shuffle=False, num_workers=1)
+            'test': DataLoader(transformed_dataset_test, batch_size=1, shuffle=False, num_workers=1),
             'run': DataLoader(transformed_dataset_run, batch_size=1, shuffle=False, num_workers=1)
         }
 
@@ -665,7 +665,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 # Save probabilities nib file - ...
                 for l in range(n_labels_):
                     prob_out = nib.Nifti1Image(prob_out_.cpu().data.numpy()[0,l+1,:,:,:], img_tmp_info.affine, img_tmp_info.header)
-                    nib.save(prob_out, args_.results_dir + name_ + '_pr-' +  str(l+1) ' _ ' + str(ind) + '.nii.gz')
+                    nib.save(prob_out, args_.results_dir + name_ + '_pr-' +  str(l+1) + ' _ ' + str(ind) + '.nii.gz')
                 
 
 
@@ -681,7 +681,7 @@ class LocalisationNetwork3DMultipleLabels(object):
   
             
             # # # # # # # # # # # # # # # # # # # # # # # #
-            def displ_res_all(img_gt_, seg_gt_, seg_pr_, prob_out_, n_labels_, pos_, n_labels_):
+            def displ_res_all(img_gt_, seg_gt_, seg_pr_, prob_out_, pos_, n_labels_):
             
             
                 plt.figure(figsize=((3*(3+n_labels_)), 9))
@@ -885,7 +885,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                 # Save probabilities nib file - ...
                 for l in range(n_labels_):
                     prob_out = nib.Nifti1Image(prob_out_.cpu().data.numpy()[0,l+1,:,:,:], img_tmp_info.affine, img_tmp_info.header)
-                    nib.save(prob_out, args_.results_dir + name_ + '_pr-' +  str(l+1) ' _ ' + str(ind) + '.nii.gz')
+                    nib.save(prob_out, args_.results_dir + name_ + '_pr-' +  str(l+1) + ' _ ' + str(ind) + '.nii.gz')
                 
 
 
@@ -904,7 +904,7 @@ class LocalisationNetwork3DMultipleLabels(object):
   
             
             # # # # # # # # # # # # # # # # # # # # # # # #
-            def displ_res_all(img_gt_, seg_pr_, prob_out_, n_labels_, pos_, n_labels_):
+            def displ_res_all(img_gt_, seg_pr_, prob_out_, pos_, n_labels_):
             
             
                 plt.figure(figsize=((3*(2+n_labels_)), 9))
