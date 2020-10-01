@@ -1,6 +1,6 @@
 # Localisation and segmentation for fetal MRI -- under development 
 
-This reposity provides a solution for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
+Solutions for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
 
 
 ## Quick how-to: setup
