@@ -12,7 +12,7 @@ Solutions for localisation and segmentation in fetal MRI stacks or motion-correc
 
 ## Quick how-to: running train_3D_Segmentation.py
 
-1. Prepare the datasets for 3D localisation - resampled stacks and the corresponding binary label mask
+1. Prepare datasets for 3D localisation/segmentation - resampled stacks and the binary label masks
 
 	i_size=128   
 	mkdir res_datasets/${case_id}   
