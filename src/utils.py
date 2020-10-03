@@ -417,6 +417,7 @@ class ArgumentsTrainTestLocalisation():
                  run_csv='data_localisation_2labels_brain_mixed_run.csv',
                  exp_name='test',
                  task_net='unet_3D',
+                 cls_net='cls_3D',
                  n_classes=2):
 
         self.epochs = epochs
@@ -443,5 +444,6 @@ class ArgumentsTrainTestLocalisation():
         self.run_csv = run_csv
         self.root_dir = root_dir
         self.task_net = task_net
+        self.cls_net = cls_net
         self.n_classes = n_classes
 
