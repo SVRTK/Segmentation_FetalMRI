@@ -32,7 +32,7 @@ from src import networks as md
 
 N_epochs = 100
 I_size = 128
-N_classes = 3
+N_classes = 4
 
 
 # # # Prepare arguments
@@ -45,16 +45,16 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
                                       validation_steps=8,
                                       lamda=10,
                                       training=True,
-                                      testing=True,
-                                      running=True,
-                                      root_dir='/data/projects/localisation/data/',
-                                      csv_dir='/data/projects/localisation/data/',
-                                      train_csv='data_localisation_2labels_train.csv',
-                                      valid_csv='data_localisation_2labels_valid.csv',
-                                      test_csv='data_localisation_2labels_test.csv',
-                                      run_csv='data_localisation_2labels_run.csv',
-                                      results_dir='/data/project/localisation/network_results/results-3D-2lab-loc/',
-                                      checkpoint_dir='/data/project/localisation/network_results/checkpoints-3D-2lab-loc/',
+                                      testing=False,
+                                      running=False,
+                                      root_dir='/data/project/Localisation/wshop_data/',
+                                      csv_dir='/data/project/Localisation/wshop_data/',
+                                      train_csv='data_localisation_3labels_uterus_train.csv',
+                                      valid_csv='data_localisation_3labels_uterus_valid.csv',
+                                      test_csv='data_localisation_3labels_uterus_test.csv',
+                                      run_csv='data_localisation_3labels_uterus_test.csv',
+                                      results_dir='/data/project/Localisation/wshop_data/loc3D/results-3D-3lab-loc/',
+                                      checkpoint_dir='/data/project/Localisation/wshop_data/loc3D/checkpoints-3D-2lab-loc/',
                                       exp_name='Loc_3D',
                                       task_net='unet_3D',
                                       n_classes=N_classes)
