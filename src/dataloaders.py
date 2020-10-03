@@ -164,7 +164,7 @@ class LocalisationDataLoader(Dataset):
         Augmentation
         """
         if self.is_augment:
-            # Choose to do motion, spike or both
+            # Choose to do affine, motion, spike or affine and motion
             augmentation_choice = np.random.choice([0, 1, 2, 3])
             if augmentation_choice == 0:
                 aug_img = Compose([self.to_affine])(subject)
