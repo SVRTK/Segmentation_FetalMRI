@@ -84,6 +84,163 @@ def print_networks(nets, names):
 # ==================================================================================================================== #
 #
 
+# Plot predictions vs gt - cropped
+def plot_img_cropped(patch_size, epoch_,
+                     real_img_crop_, fake_img_crop_):
+    # Figure
+    plt.figure(figsize=(8, 6))
+
+    # # # # # # Real image cropped
+    plt.subplot(2, 1, 1)
+    # IMG
+    img_plot = torch.zeros((patch_size[0], 2 * patch_size[1]))
+    for i in range(2):  # body and brain
+        img_plot[:, i * patch_size[1]:i * patch_size[1] + patch_size[1]] = \
+            real_img_crop_[0, i, :, :].cpu().data
+    plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    plt.colorbar()
+    plt.ylabel('GT Cropped')
+    plt.xticks([])
+    plt.yticks([])
+    plt.title('Cropped images E = ' + str(epoch_ + 1))
+
+    # # # # # # IMG + PRED Segmentation
+    plt.subplot(2, 1, 2)
+    # IMG
+    img_plot = torch.zeros((patch_size[0], 2 * patch_size[1]))
+    for i in range(2):  # body and brain
+        img_plot[:, i * patch_size[1]:i * patch_size[1] + patch_size[1]] = \
+            fake_img_crop_[0, i, :, :].cpu().data
+    plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
+    plt.ylabel('PR Cropped')
+    plt.xticks([])
+    plt.yticks([])
+    plt.colorbar()
+
+    plt.show()
+
+
+# Get cropped brain and body
+def get_cropped_brain_body(input_size_, output_size_, img_input_, seg_output_):
+    # Get sizes
+    b, c, h, w, d = input_size_
+    new_h, new_w, new_d = output_size_
+
+    def calculate_centroids(seg_):
+        b, c, h, w, d = seg_.shape
+
+        # Calculate centroids for channels 1 -> end (exclude background)
+        centroids_ = np.zeros((b, c - 1, 3))
+        exists_ = np.zeros((b, c - 1))  # 0 if mask does not exist, 1 if it exists
+
+        # Calculate centre of mass
+        coords_x, coords_y, coords_z = np.meshgrid(np.arange(0, h),
+                                                   np.arange(0, w),
+                                                   np.arange(0, d), indexing='xy')
+
+        def get_coords(lab):
+            exists = 1
+            if np.sum(lab) == 0:
+                coords_x_, coords_y_, coords_z_ = 0, 0, 0
+                exists = 0
+            else:
+                coords_x_ = np.round(np.sum(coords_x * lab) / np.sum(lab))
+                coords_y_ = np.round(np.sum(coords_y * lab) / np.sum(lab))
+                coords_z_ = np.round(np.sum(coords_z * lab) / np.sum(lab))
+
+            return np.asarray([coords_x_, coords_y_, coords_z_]), exists
+
+        for i in np.arange(0, b):
+            for j in np.arange(1, c):
+                centroids_[i, j - 1, :], exists_[i, j - 1] = get_coords(seg_[i, j])
+
+        return centroids_, exists_
+
+    # Centroids are n_batches x n_channels [0=placenta,1=body,2=brain]
+    centroids, exists_ = calculate_centroids(seg_output_)
+
+    # Create brain and body patches around centre of mass
+    img_cropped_input_ = np.zeros((b, 2, new_h, new_w, new_d))
+    seg_cropped_output_ = np.zeros((b, 2, new_h, new_w, new_d))
+    patch_coords_ = np.zeros((b, 2, 3), dtype='int16')  # b, 0body|1brain
+    mask_exists_ = np.zeros((b, 2))                     # b, 0body|1brain
+
+    for i in np.arange(0, b):
+        for j in [1, 2]:  # only interested in body and brain
+            coords_x = centroids[i, j, 0]  # b, c, 0|1|2
+            coords_y = centroids[i, j, 1]  # b, c, 0|1|2
+            coords_z = centroids[i, j, 2]  # b, c, 0|1|2
+
+            mask_exists_[i, j-1] = exists_[i, j]
+
+            # Calculate start point of patch
+            patch_y = 0 if (int(coords_x - new_h // 2) < 0 or int(coords_x + new_h // 2) >= h) \
+                else int(coords_x - new_h // 2)
+            patch_x = 0 if (int(coords_y - new_w // 2) < 0 or int(coords_y + new_w // 2) >= w) \
+                else int(coords_y - new_w // 2)
+            patch_z = 0 if (int(coords_z - new_d // 2) < 0 or int(coords_z + new_d // 2) >= d) \
+                else int(coords_z - new_d // 2)
+
+            # Add to list of coordinates
+            patch_coords_[i, j - 1, 0] = int(patch_x)
+            patch_coords_[i, j - 1, 1] = int(patch_y)
+            patch_coords_[i, j - 1, 2] = int(patch_z)
+
+            # Add to variable
+            img_cropped_input_[i, j - 1] = img_input_[i, 0, patch_x:patch_x + new_h,
+                                           patch_y:patch_y + new_w,
+                                           patch_z:patch_z + new_d]
+            seg_cropped_output_[i, j - 1] = seg_output_[i, j + 1, patch_x:patch_x + new_h,
+                                            patch_y:patch_y + new_w,
+                                            patch_z:patch_z + new_d]
+
+    return torch.from_numpy(img_cropped_input_), \
+           torch.from_numpy(seg_cropped_output_), \
+           patch_coords_, mask_exists_
+
+
+# Create grid based on patch coordinates
+def create_grid(vol_size, batch_size, patch_size, patch_coords, id_c):
+    # create empty grid
+    vectors = [torch.arange(0, s) for s in vol_size]
+    grids = torch.meshgrid(vectors)
+    grid = torch.stack(grids)            # y, x, z
+    grid = torch.unsqueeze(grid, 0)      # add batch
+    grid = grid.type(torch.FloatTensor)
+
+    # normalise grid -1, 1
+    for i in range(len(vol_size)):
+        grid[:, i, ...] = 2 * (grid[:, i, ...] / (vol_size[i] - 1) - 0.5)
+
+    # Repeat for batch size
+    grid = torch.cat(batch_size*[grid])
+
+    # # Select part of grid which is around the area for body
+    for i_b in range(batch_size):
+        if i_b == 0:
+            new_grid = grid[i_b:i_b+1, :,
+                       patch_coords[i_b, id_c, 0]:patch_coords[i_b, id_c, 0] + patch_size[0],
+                       patch_coords[i_b, id_c, 1]:patch_coords[i_b, id_c, 1] + patch_size[1],
+                       patch_coords[i_b, id_c, 2]:patch_coords[i_b, id_c, 2] + patch_size[2]]
+        else:
+            temp_ = grid[i_b:i_b+1, :,
+                    patch_coords[i_b, id_c, 0]:patch_coords[i_b, id_c, 0] + patch_size[0],
+                    patch_coords[i_b, id_c, 1]:patch_coords[i_b, id_c, 1] + patch_size[1],
+                    patch_coords[i_b, id_c, 2]:patch_coords[i_b, id_c, 2] + patch_size[2]]
+            new_grid = torch.cat((new_grid, temp_), dim=0)
+
+    # Need to permute as that's how pytorch wants it
+    if len(vol_size) == 2:
+        new_grid = new_grid.permute(0, 2, 3, 1)
+        new_grid = new_grid[..., [1, 0]]
+    elif len(vol_size) == 3:
+        new_grid = new_grid.permute(0, 2, 3, 4, 1)
+        new_grid = new_grid[..., [2, 1, 0]]
+
+    # return grid
+    return cuda(new_grid)
+
+
 def normalise_a_b(data_, a=-1, b=1):
     if torch.is_tensor(data_):
         return (b - a) * (data_ - torch.min(data_)) / (torch.max(data_) - torch.min(data_) + 1e-6) + a
