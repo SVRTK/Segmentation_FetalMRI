@@ -489,10 +489,11 @@ class LocalisationNetwork3DMultipleLabels(object):
                         with torch.no_grad():
                             # Forward pass through UNet
                             ##################################################
+                            out_logits_val = self.Loc(img_input)
                             if args.n_classes == 1:
-                                seg_pred_val = torch.sigmoid(self.Loc(img_input))
+                                seg_pred_val = torch.sigmoid(out_logits_val)
                             else:
-                                seg_pred_val = torch.softmax(self.Loc(img_input), dim=1)
+                                seg_pred_val = torch.softmax(out_logits_val, dim=1)
 
                             # Dice Loss
                             ###################################################
@@ -513,24 +514,24 @@ class LocalisationNetwork3DMultipleLabels(object):
                         if epoch % 1 == 0 and not plotted:
 
                             print("....................................................................................")
-                            
+
+                            # Plot predictions vs gt
                             utils.plot_seg_img_labels(args, epoch,
                                                       seg_output[:,:,:,:,args.crop_depth//2],
                                                       seg_pred_val[:,:,:,:,args.crop_depth//2],
                                                       img_input[:,:,:,:,args.crop_depth//2])
-                        
-                        
-                            out_prob = self.Loc(img_input)
+
+                            # Plot logits
                             plt.figure(figsize=(3*(self.n_labels + 1), 3))
                             
-                            
-                            
                             plot_range = self.n_labels + 1
-                            
-                            # plot probabilities
+
                             for l in range(plot_range):
                                 plt.subplot(1,plot_range,l+1)
-                                plt.imshow(out_prob.cpu().data.numpy()[0,l,:,:,args.crop_depth//2])
+                                plt.imshow(out_logits_val.cpu().data.numpy()[0,l,:,:,args.crop_depth//2],
+                                           cmap='jet')
+                                plt.xticks([])
+                                plt.yticks([])
                                 plt.colorbar()
                                 
                             plt.show()
@@ -1062,14 +1063,16 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                   netL=args.task_net,
                                   gpu_ids=args.gpu_ids)
 
-        self.Dis = define_network(input_nc=1,
-                                  output_nc=args.n_classes,
+        self.Dis = define_network(input_nc=2,   #body and brain
+                                  output_nc=1,
                                   netL=args.cls_net,
                                   gpu_ids=args.gpu_ids)
 
         utils.print_networks([self.Loc, self.Dis], ['Loc', 'Dis'])
 
         self.n_labels = args.n_classes - 1
+        self.vol_size = (args.crop_width, args.crop_height, args.crop_depth)
+        self.patch_size = (64, 64, 64)
 
         # Define Loss criterias
         self.MSE = nn.MSELoss()
@@ -1080,8 +1083,12 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
         # Optimizers
         #####################################################
         self.l_optimizer = torch.optim.Adam(self.Loc.parameters(), lr=args.lr)
+        self.d_optimizer = torch.optim.Adam(self.Dis.parameters(), lr=args.lr, betas=(0.5, 0.999))
 
         self.l_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=self.l_optimizer,
+                                                                lr_lambda=utils.LambdaLR(args.epochs, 0,
+                                                                                         args.decay_epoch).step)
+        self.d_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=self.d_optimizer,
                                                                 lr_lambda=utils.LambdaLR(args.epochs, 0,
                                                                                          args.decay_epoch).step)
 
@@ -1099,7 +1106,9 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
             self.start_epoch = ckpt['epoch']
             self.losses_train = ckpt['losses_train']
             self.Loc.load_state_dict(ckpt['Loc'])
+            self.Dis.load_state_dict(ckpt['Dis'])
             self.l_optimizer.load_state_dict(ckpt['l_optimizer'])
+            self.d_optimizer.load_state_dict(ckpt['d_optimizer'])
         except:
             print(' [*] No checkpoint!')
             self.start_epoch = 0
@@ -1181,7 +1190,9 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
             start_time = time.time()
 
             # Metrics to store during training
-            metrics = {'loc_loss_train': [], 'loc_loss_valid': [], 'lr': [lr]}
+            metrics = {'loc_loss_train': [], 'adv_loss_train': [], 'seg_loss_train': [], 'dis_loss_train': [],
+                       'loc_loss_valid': [], 'adv_loss_valid': [], 'seg_loss_valid': [], 'dis_loss_valid': [],
+                       'lr': [lr]}
 
             # Set plotted to false at the start of each epoch
             plotted = False
@@ -1202,10 +1213,11 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                     # Fetch some slices from the data
                     ##################################################
                     # Image data
-                    img_input = Variable(data_point['image'])
-
+                    img_input = data_point['image']
                     seg_current = data_point['lab']
                     seg_output = []
+
+                    batch_size = img_input.shape[0]
 
                     # label 1 - background
                     bg = torch.ones_like(img_input)
@@ -1216,87 +1228,240 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                     # the rest of the labels
                     for l in range(self.n_labels):
                         seg_output.append(seg_current[:, [l], ...])
+                    seg_output = torch.cat(seg_output, dim=1)
+
+                    # Get cropped brain and body
+                    img_cropped_input, seg_cropped_output, patch_coords, mask_exists = \
+                        utils.get_cropped_brain_body(seg_output.shape,
+                                                     self.patch_size,
+                                                     img_input.numpy(),
+                                                     seg_output.numpy())
+
+                    # for idx in range(batch_size):
+                    #     plt.subplot(2, 2, 1)
+                    #     plt.imshow(img_cropped_input[idx, 0, :, self.patch_size[0] // 2, :])
+                    #
+                    #     plt.subplot(2, 2, 2)
+                    #     plt.imshow(seg_cropped_output[idx, 0, :, self.patch_size[0] // 2, :])
+                    #
+                    #     plt.subplot(2, 2, 3)
+                    #     plt.imshow(img_cropped_input[idx, 1, :, self.patch_size[0] // 2, :])
+                    #
+                    #     plt.subplot(2, 2, 4)
+                    #     plt.imshow(seg_cropped_output[idx, 1, :, self.patch_size[0] // 2, :])
+                    #
+                    #     plt.show()
 
                     # Create cuda variables:
                     img_input = utils.cuda(img_input)
-                    seg_output = utils.cuda(torch.cat(seg_output, dim=1))
+                    real_img_crop = utils.cuda(img_cropped_input.type(torch.float32))  # real for discriminator
+                    seg_output = utils.cuda(seg_output)
+
+                    # If any of the masks is not present, do not train the discriminator
+                    # Because we do not want the discriminator to see bad examples
+                    if np.any(mask_exists) == 0:
+                        lamda_dis = 0.0
+                    else:
+                        lamda_dis = 1.0
 
                     # TRAIN
                     ##################################################
                     if phase == 'train':
                         ##################################################
-                        # Set optimiser to zero grad
+                        ############### Train segmentation network
                         ##################################################
                         self.l_optimizer.zero_grad()
+                        set_grad([self.Dis], False)
 
                         # Forward pass through network
                         ##################################################
                         seg_pred = self.Loc(img_input)
-                        # print(seg_pred.shape)
 
                         # Dice Loss
                         ###################################################
                         if args.n_classes == 1:
-                            loc_loss = (1. - self.DL(torch.sigmoid(seg_pred), seg_output)) * args.lamda
+                            seg_pred = torch.sigmoid(seg_pred)
+                            loc_loss = (1. - self.DL(seg_pred, seg_output)) * args.lamda
                         else:
-                            loc_loss = (1. - self.GDL(torch.softmax(seg_pred, dim=1), seg_output)) * args.lamda
+                            seg_pred = torch.softmax(seg_pred, dim=1)
+                            loc_loss = (1. - self.GDL(seg_pred, seg_output)) * args.lamda
+
+                        # Prepare patches for discriminator
+                        ###################################################
+                        _, _, patch_coords, mask_exists = utils.get_cropped_brain_body(seg_output.shape,
+                                                                                       self.patch_size,
+                                                                                       img_input.cpu().data.numpy(),
+                                                                                       seg_pred.cpu().data.numpy())
+                        fake_img_crop = torch.cat((F.grid_sample(img_input[:, 0:1, :, :, :],
+                                                                   utils.create_grid(self.vol_size,
+                                                                                     batch_size,
+                                                                                     self.patch_size,
+                                                                                     patch_coords, id_c=0),  # body
+                                                                   align_corners=True),
+                                                     F.grid_sample(img_input[:, 0:1, :, :, :],
+                                                                   utils.create_grid(self.vol_size,
+                                                                                     batch_size,
+                                                                                     self.patch_size,
+                                                                                     patch_coords, id_c=1),  # brain
+                                                                   align_corners=True)), dim=1)
+                        fake_img_crop = utils.cuda(fake_img_crop)
+
+                        # Adversarial losses
+                        ###################################################
+                        img_fake_dis = self.Dis(fake_img_crop)
+                        real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
+                        adv_loss = self.MSE(img_fake_dis, real_label)
+
+                        # Total loss for segmentation
+                        ###################################################
+                        seg_loss = loc_loss + adv_loss * lamda_dis
 
                         # Store metrics
                         metrics['loc_loss_train'].append(loc_loss.item())
+                        metrics['adv_loss_train'].append(adv_loss.item())
+                        metrics['seg_loss_train'].append(seg_loss.item())
 
                         # Update generators & segmentation
                         ###################################################
                         loc_loss.backward()
                         self.l_optimizer.step()
 
+                        #################################################
+                        #####################  Discriminator Computations
+                        #################################################
+                        set_grad([self.Dis], True)
+                        self.d_optimizer.zero_grad()
+
+                        # Forward pass through discriminator
+                        #################################################
+                        img_fake_dis = self.Dis(fake_img_crop)
+                        img_real_dis = self.Dis(real_img_crop)
+                        real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
+                        fake_label = utils.cuda(Variable(torch.zeros(img_fake_dis.size())))
+
+                        # Discriminator losses
+                        ##################################################
+                        dis_real_loss = self.MSE(img_real_dis, real_label)
+                        dis_fake_loss = self.MSE(img_fake_dis, fake_label)
+
+                        # Total discriminators losses
+                        dis_loss = (dis_real_loss + dis_fake_loss) * 0.5 * lamda_dis
+
+                        # Store metrics
+                        metrics['dis_loss_train'].append(dis_loss.item())
+
+                        # Update discriminators
+                        ##################################################
+                        dis_loss.backward()
+                        self.d_optimizer.step()
 
                     # VALIDATE
                     #######################################################
                     else:
                         self.Loc.eval()
+                        self.Dis.eval()
 
                         with torch.no_grad():
-                            # Forward pass through UNet
+                            # Forward pass through network
                             ##################################################
-                            if args.n_classes == 1:
-                                seg_pred_val = torch.sigmoid(self.Loc(img_input))
-                            else:
-                                seg_pred_val = torch.softmax(self.Loc(img_input), dim=1)
+                            out_logits_val = self.Loc(img_input)
 
                             # Dice Loss
                             ###################################################
                             if args.n_classes == 1:
+                                seg_pred_val = torch.sigmoid(out_logits_val)
                                 loc_loss = (1. - self.DL(seg_pred_val, seg_output)) * args.lamda
                             else:
+                                seg_pred_val = torch.softmax(out_logits_val, dim=1)
                                 loc_loss = (1. - self.GDL(seg_pred_val, seg_output)) * args.lamda
+
+                            # Prepare patches for discriminator
+                            ###################################################
+                            _, _, patch_coords, mask_exists = utils.get_cropped_brain_body(seg_output.shape,
+                                                                                           self.patch_size,
+                                                                                           img_input.cpu().data.numpy(),
+                                                                                           seg_pred_val.cpu().data.numpy())
+                            fake_img_crop = torch.cat((F.grid_sample(img_input[:, 0:1, :, :, :],
+                                                                     utils.create_grid(self.vol_size,
+                                                                                       batch_size,
+                                                                                       self.patch_size,
+                                                                                       patch_coords, id_c=0),  # body
+                                                                     align_corners=True),
+                                                       F.grid_sample(img_input[:, 0:1, :, :, :],
+                                                                     utils.create_grid(self.vol_size,
+                                                                                       batch_size,
+                                                                                       self.patch_size,
+                                                                                       patch_coords, id_c=1),  # brain
+                                                                     align_corners=True)), dim=1)
+                            fake_img_crop = utils.cuda(fake_img_crop)
+
+                            # Adversarial losses
+                            ###################################################
+                            img_fake_dis = self.Dis(fake_img_crop)
+                            real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
+                            adv_loss = self.MSE(img_fake_dis, real_label)
+
+                            # Total loss for segmentation
+                            ###################################################
+                            seg_loss = loc_loss + adv_loss * lamda_dis
 
                             # Store metrics
                             metrics['loc_loss_valid'].append(loc_loss.item())
+                            metrics['adv_loss_valid'].append(adv_loss.item())
+                            metrics['seg_loss_valid'].append(seg_loss.item())
 
-                            # Save valid losses here:
+                            # Forward pass through discriminator
+                            #################################################
+                            img_fake_dis = self.Dis(fake_img_crop)
+                            img_real_dis = self.Dis(real_img_crop)
+                            real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
+                            fake_label = utils.cuda(Variable(torch.zeros(img_fake_dis.size())))
+
+                            # Discriminator losses
+                            ##################################################
+                            dis_real_loss = self.MSE(img_real_dis, real_label)
+                            dis_fake_loss = self.MSE(img_fake_dis, fake_label)
+
+                            # Total discriminators losses
+                            dis_loss = (dis_real_loss + dis_fake_loss) * 0.5 * lamda_dis
+
+                            # Store metrics
+                            metrics['dis_loss_valid'].append(dis_loss.item())
+
                             loc_loss_valid += loc_loss.item()
 
                         # Plot validation results
                         #######################################################
-                        if epoch % 1 == 0 and not plotted:
+                        if epoch % 10 == 0 and not plotted:
+
+                            plotted = True
 
                             print(
                                 "....................................................................................")
 
+                            # Plot predictions vs gt
                             utils.plot_seg_img_labels(args, epoch,
                                                       seg_output[:, :, :, :, args.crop_depth // 2],
                                                       seg_pred_val[:, :, :, :, args.crop_depth // 2],
                                                       img_input[:, :, :, :, args.crop_depth // 2])
 
-                            out_prob = self.Loc(img_input)
+
+
+                            utils.plot_img_cropped(self.patch_size, epoch,
+                                             real_img_crop[:, :, :, :, self.patch_size[2] // 2],
+                                             fake_img_crop[:, :, :, :, self.patch_size[2] // 2])
+
+                            # Plot logits
                             plt.figure(figsize=(3 * (self.n_labels + 1), 3))
 
                             plot_range = self.n_labels + 1
 
-                            # plot probabilities
                             for l in range(plot_range):
                                 plt.subplot(1, plot_range, l + 1)
-                                plt.imshow(out_prob.cpu().data.numpy()[0, l, :, :, args.crop_depth // 2])
+                                plt.imshow(out_logits_val.cpu().data.numpy()[0, l, :, :, args.crop_depth // 2],
+                                           cmap='jet')
+                                plt.xticks([])
+                                plt.yticks([])
                                 plt.colorbar()
 
                             plt.show()
@@ -1320,7 +1485,9 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                 # Override the latest checkpoint for best generator loss
                                 utils.save_checkpoint({'epoch': epoch + 1,
                                                        'Loc': self.Loc.state_dict(),
-                                                       'l_optimizer': self.l_optimizer.state_dict()},
+                                                       'Dis': self.Dis.state_dict(),
+                                                       'l_optimizer': self.l_optimizer.state_dict(),
+                                                       'd_optimizer': self.d_optimizer.state_dict()},
                                                       '%s/latest_best_loss.ckpt' % (args.checkpoint_dir))
 
                                 # Write in a file
@@ -1333,9 +1500,9 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                     # PRINT STATS
                     ###################################################
                     time_elapsed = time.time() - start_time
-                    print("%s Epoch: (%3d) (%5d/%5d) (%3d) | Loc Loss:%.2e | %.0fm %.2fs" %
+                    print("%s Epoch: (%3d) (%5d/%5d) (%3d) | Loc Loss:%.2e | Adv Loss:%.2e | Dis Loss:%.2e | %.0fm %.2fs" %
                           (phase.upper(), epoch, i + 1, len_dataloader, step,
-                           loc_loss, time_elapsed // 60, time_elapsed % 60))
+                           loc_loss, adv_loss, dis_loss, time_elapsed // 60, time_elapsed % 60))
 
             # Append the metrics to losses_train
             ######################################
@@ -1345,15 +1512,19 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
             #######################################################
             utils.save_checkpoint({'epoch': epoch + 1,
                                    'Loc': self.Loc.state_dict(),
+                                   'Dis': self.Dis.state_dict(),
                                    'l_optimizer': self.l_optimizer.state_dict(),
+                                   'd_optimizer': self.d_optimizer.state_dict(),
                                    'losses_train': self.losses_train},
                                   '%s/latest.ckpt' % (args.checkpoint_dir))
 
             # Update learning rates
             ########################
             self.l_lr_scheduler.step()
+            self.d_lr_scheduler.step()
 
         return self.losses_train
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     def test(self, args):
