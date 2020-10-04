@@ -1161,7 +1161,9 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
 
         self.dataloaders = {
             'train': DataLoader(transformed_dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4),
-            'valid': DataLoader(transformed_dataset_valid, batch_size=args.batch_size, shuffle=False, num_workers=1),
+            'train-discr': DataLoader(transformed_dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4),
+            'valid': DataLoader(transformed_dataset_valid, batch_size=args.batch_size, shuffle=True, num_workers=1),
+            'valid-discr': DataLoader(transformed_dataset_valid, batch_size=args.batch_size, shuffle=True, num_workers=1),
             'test': DataLoader(transformed_dataset_test, batch_size=1, shuffle=False, num_workers=1),
             'run': DataLoader(transformed_dataset_run, batch_size=1, shuffle=False, num_workers=1)
         }
@@ -1215,6 +1217,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                     # Image data
                     img_input = data_point['image']
                     seg_current = data_point['lab']
+                    name_current = data_point['name']
                     seg_output = []
 
                     batch_size = img_input.shape[0]
@@ -1230,39 +1233,70 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                         seg_output.append(seg_current[:, [l], ...])
                     seg_output = torch.cat(seg_output, dim=1)
 
-                    # Get cropped brain and body
-                    img_cropped_input, seg_cropped_output, patch_coords, mask_exists = \
-                        utils.get_cropped_brain_body(seg_output.shape,
-                                                     self.patch_size,
-                                                     img_input.numpy(),
-                                                     seg_output.numpy())
-
-                    # for idx in range(batch_size):
-                    #     plt.subplot(2, 2, 1)
-                    #     plt.imshow(img_cropped_input[idx, 0, :, self.patch_size[0] // 2, :])
-                    #
-                    #     plt.subplot(2, 2, 2)
-                    #     plt.imshow(seg_cropped_output[idx, 0, :, self.patch_size[0] // 2, :])
-                    #
-                    #     plt.subplot(2, 2, 3)
-                    #     plt.imshow(img_cropped_input[idx, 1, :, self.patch_size[0] // 2, :])
-                    #
-                    #     plt.subplot(2, 2, 4)
-                    #     plt.imshow(seg_cropped_output[idx, 1, :, self.patch_size[0] // 2, :])
-                    #
-                    #     plt.show()
-
                     # Create cuda variables:
                     img_input = utils.cuda(img_input)
-                    real_img_crop = utils.cuda(img_cropped_input.type(torch.float32))  # real for discriminator
                     seg_output = utils.cuda(seg_output)
 
-                    # If any of the masks is not present, do not train the discriminator
-                    # Because we do not want the discriminator to see bad examples
-                    if np.any(mask_exists) == 0:
-                        lamda_dis = 0.0
-                    else:
-                        lamda_dis = 1.0
+                    # Prepare data for discriminator
+                    found_real = False
+                    while not found_real:
+                        for j, data_point_dis in enumerate(self.dataloaders[phase+'-discr']):
+
+                            # Image data
+                            img_input_dis = data_point_dis['image']
+                            seg_current_dis = data_point_dis['lab']
+                            name_current_dis = data_point_dis['name']
+                            seg_output_dis = []
+
+                            batch_size_dis = img_input_dis.shape[0]
+
+                            # label 1 - background
+                            bg = torch.ones_like(img_input_dis)
+                            for l in range(self.n_labels):
+                                bg = bg - seg_current_dis[:, [l], ...]
+                            seg_output_dis.append(bg)
+
+                            # the rest of the labels
+                            for l in range(self.n_labels):
+                                seg_output_dis.append(seg_current_dis[:, [l], ...])
+                            seg_output_dis = torch.cat(seg_output_dis, dim=1)
+
+                            # crop
+                            img_cropped_input, seg_cropped_output, patch_coords, mask_exists = \
+                                utils.get_cropped_brain_body(seg_output_dis.shape,
+                                                             self.patch_size,
+                                                             img_input_dis.numpy(),
+                                                             seg_output_dis.numpy())
+
+                            # real_img_crop = utils.cuda(torch.cat((img_cropped_input.type(torch.float32), # real for discriminator
+                            #                                       seg_cropped_output.type(torch.float32)), dim=1))
+                            real_img_crop = utils.cuda(
+                                torch.mul(img_cropped_input.type(torch.float32),  # real for discriminator
+                                          seg_cropped_output.type(torch.float32)))
+
+                            # If any of the masks is not present, do not train the discriminator
+                            # Because we do not want the discriminator to see bad examples
+                            # print(mask_exists)
+                            if np.sum(mask_exists) < 2 * batch_size_dis:
+                                continue
+                            else:
+                                # for idx in range(batch_size):
+                                #     plt.subplot(2, 2, 1)
+                                #     plt.imshow(img_cropped_input[idx, 0, :, self.patch_size[0] // 2, :])
+                                #
+                                #     plt.subplot(2, 2, 2)
+                                #     plt.imshow(seg_cropped_output[idx, 0, :, self.patch_size[0] // 2, :])
+                                #
+                                #     plt.subplot(2, 2, 3)
+                                #     plt.imshow(img_cropped_input[idx, 1, :, self.patch_size[0] // 2, :])
+                                #
+                                #     plt.subplot(2, 2, 4)
+                                #     plt.imshow(seg_cropped_output[idx, 1, :, self.patch_size[0] // 2, :])
+                                #
+                                #     plt.show()
+                                found_real = True
+                                # print(mask_exists, name_current_dis)
+                                break
 
                     # TRAIN
                     ##################################################
@@ -1270,6 +1304,9 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                         ##################################################
                         ############### Train segmentation network
                         ##################################################
+                        # if i > 4:
+                        #     break
+
                         self.l_optimizer.zero_grad()
                         set_grad([self.Dis], False)
 
@@ -1292,19 +1329,33 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                                                                        self.patch_size,
                                                                                        img_input.cpu().data.numpy(),
                                                                                        seg_pred.cpu().data.numpy())
+
                         fake_img_crop = torch.cat((F.grid_sample(img_input[:, 0:1, :, :, :],
                                                                    utils.create_grid(self.vol_size,
                                                                                      batch_size,
                                                                                      self.patch_size,
                                                                                      patch_coords, id_c=0),  # body
                                                                    align_corners=True),
-                                                     F.grid_sample(img_input[:, 0:1, :, :, :],
+                                                   F.grid_sample(img_input[:, 0:1, :, :, :],
                                                                    utils.create_grid(self.vol_size,
                                                                                      batch_size,
                                                                                      self.patch_size,
                                                                                      patch_coords, id_c=1),  # brain
                                                                    align_corners=True)), dim=1)
-                        fake_img_crop = utils.cuda(fake_img_crop)
+                        fake_seg_crop = torch.cat((F.grid_sample(seg_pred[:, 2:3, :, :, :],
+                                                                 utils.create_grid(self.vol_size,
+                                                                                   batch_size,
+                                                                                   self.patch_size,
+                                                                                   patch_coords, id_c=0),  # body
+                                                                 align_corners=True),
+                                                   F.grid_sample(seg_pred[:, 3:4, :, :, :],
+                                                                 utils.create_grid(self.vol_size,
+                                                                                   batch_size,
+                                                                                   self.patch_size,
+                                                                                   patch_coords, id_c=1),  # brain
+                                                                 align_corners=True)), dim=1)
+                        # fake_img_crop = utils.cuda(Variable(torch.cat((fake_img_crop, fake_seg_crop), dim=1)))
+                        fake_img_crop = utils.cuda(Variable(torch.mul(fake_img_crop, fake_seg_crop)))
 
                         # Adversarial losses
                         ###################################################
@@ -1314,7 +1365,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
 
                         # Total loss for segmentation
                         ###################################################
-                        seg_loss = loc_loss + adv_loss * lamda_dis
+                        seg_loss = loc_loss + adv_loss
 
                         # Store metrics
                         metrics['loc_loss_train'].append(loc_loss.item())
@@ -1345,7 +1396,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                         dis_fake_loss = self.MSE(img_fake_dis, fake_label)
 
                         # Total discriminators losses
-                        dis_loss = (dis_real_loss + dis_fake_loss) * 0.5 * lamda_dis
+                        dis_loss = (dis_real_loss + dis_fake_loss) * 0.5
 
                         # Store metrics
                         metrics['dis_loss_train'].append(dis_loss.item())
@@ -1354,6 +1405,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                         ##################################################
                         dis_loss.backward()
                         self.d_optimizer.step()
+
 
                     # VALIDATE
                     #######################################################
@@ -1393,7 +1445,21 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                                                                        self.patch_size,
                                                                                        patch_coords, id_c=1),  # brain
                                                                      align_corners=True)), dim=1)
-                            fake_img_crop = utils.cuda(fake_img_crop)
+                            fake_seg_crop = torch.cat((F.grid_sample(seg_pred_val[:, 2:3, :, :, :],
+                                                                     utils.create_grid(self.vol_size,
+                                                                                       batch_size,
+                                                                                       self.patch_size,
+                                                                                       patch_coords, id_c=0),  # body
+                                                                     align_corners=True),
+                                                       F.grid_sample(seg_pred_val[:, 3:4, :, :, :],
+                                                                     utils.create_grid(self.vol_size,
+                                                                                       batch_size,
+                                                                                       self.patch_size,
+                                                                                       patch_coords, id_c=1),  # brain
+                                                                     align_corners=True)), dim=1)
+
+                            # fake_img_crop = utils.cuda(torch.cat((fake_img_crop, fake_seg_crop), dim=1))
+                            fake_img_crop = utils.cuda(torch.mul(fake_img_crop, fake_seg_crop))
 
                             # Adversarial losses
                             ###################################################
@@ -1403,7 +1469,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
 
                             # Total loss for segmentation
                             ###################################################
-                            seg_loss = loc_loss + adv_loss * lamda_dis
+                            seg_loss = loc_loss + adv_loss
 
                             # Store metrics
                             metrics['loc_loss_valid'].append(loc_loss.item())
@@ -1423,16 +1489,18 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                             dis_fake_loss = self.MSE(img_fake_dis, fake_label)
 
                             # Total discriminators losses
-                            dis_loss = (dis_real_loss + dis_fake_loss) * 0.5 * lamda_dis
+                            dis_loss = (dis_real_loss + dis_fake_loss) * 0.5
 
                             # Store metrics
                             metrics['dis_loss_valid'].append(dis_loss.item())
 
+                            # Store the localisation loss for validation
                             loc_loss_valid += loc_loss.item()
+
 
                         # Plot validation results
                         #######################################################
-                        if epoch % 10 == 0 and not plotted:
+                        if epoch % 5 == 0 and not plotted:
 
                             plotted = True
 
@@ -1445,26 +1513,25 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                                       seg_pred_val[:, :, :, :, args.crop_depth // 2],
                                                       img_input[:, :, :, :, args.crop_depth // 2])
 
-
-
                             utils.plot_img_cropped(self.patch_size, epoch,
-                                             real_img_crop[:, :, :, :, self.patch_size[2] // 2],
-                                             fake_img_crop[:, :, :, :, self.patch_size[2] // 2])
+                                                   real_img_crop[:, :, :, :, self.patch_size[2] // 2],
+                                                   fake_img_crop[:, :, :, :, self.patch_size[2] // 2],
+                                                   name_current_dis[0] + '|' + name_current[0])
 
                             # Plot logits
-                            plt.figure(figsize=(3 * (self.n_labels + 1), 3))
-
-                            plot_range = self.n_labels + 1
-
-                            for l in range(plot_range):
-                                plt.subplot(1, plot_range, l + 1)
-                                plt.imshow(out_logits_val.cpu().data.numpy()[0, l, :, :, args.crop_depth // 2],
-                                           cmap='jet')
-                                plt.xticks([])
-                                plt.yticks([])
-                                plt.colorbar()
-
-                            plt.show()
+                            # plt.figure(figsize=(3 * (self.n_labels + 1), 3))
+                            #
+                            # plot_range = self.n_labels + 1
+                            #
+                            # for l in range(plot_range):
+                            #     plt.subplot(1, plot_range, l + 1)
+                            #     plt.imshow(out_logits_val.cpu().data.numpy()[0, l, :, :, args.crop_depth // 2],
+                            #                cmap='jet')
+                            #     plt.xticks([])
+                            #     plt.yticks([])
+                            #     plt.colorbar()
+                            #
+                            # plt.show()
 
                             print(
                                 "....................................................................................")
