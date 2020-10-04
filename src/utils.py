@@ -86,15 +86,18 @@ def print_networks(nets, names):
 
 # Plot predictions vs gt - cropped
 def plot_img_cropped(patch_size, epoch_,
-                     real_img_crop_, fake_img_crop_):
+                     real_img_crop_, fake_img_crop_, name_):
+
+    n_b = real_img_crop_.shape[1]
+
     # Figure
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(12, 10))
 
     # # # # # # Real image cropped
     plt.subplot(2, 1, 1)
     # IMG
-    img_plot = torch.zeros((patch_size[0], 2 * patch_size[1]))
-    for i in range(2):  # body and brain
+    img_plot = torch.zeros((patch_size[0], n_b * patch_size[1]))
+    for i in range(n_b):  # body and brain
         img_plot[:, i * patch_size[1]:i * patch_size[1] + patch_size[1]] = \
             real_img_crop_[0, i, :, :].cpu().data
     plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
@@ -102,13 +105,13 @@ def plot_img_cropped(patch_size, epoch_,
     plt.ylabel('GT Cropped')
     plt.xticks([])
     plt.yticks([])
-    plt.title('Cropped images E = ' + str(epoch_ + 1))
+    plt.title('Cropped images E = ' + str(epoch_ + 1) + ' ' + name_)
 
     # # # # # # IMG + PRED Segmentation
     plt.subplot(2, 1, 2)
     # IMG
-    img_plot = torch.zeros((patch_size[0], 2 * patch_size[1]))
-    for i in range(2):  # body and brain
+    img_plot = torch.zeros((patch_size[0], n_b * patch_size[1]))
+    for i in range(n_b):  # body and brain
         img_plot[:, i * patch_size[1]:i * patch_size[1] + patch_size[1]] = \
             fake_img_crop_[0, i, :, :].cpu().data
     plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
