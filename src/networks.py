@@ -378,7 +378,7 @@ class LocalisationNetwork3DMultipleLabels(object):
                                           
         self.dataloaders = {
             'train': DataLoader(transformed_dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=4),
-            'valid': DataLoader(transformed_dataset_valid, batch_size=args.batch_size, shuffle=False, num_workers=1),
+            'valid': DataLoader(transformed_dataset_valid, batch_size=args.batch_size, shuffle=True, num_workers=1),
             'test': DataLoader(transformed_dataset_test, batch_size=1, shuffle=False, num_workers=1),
             'run': DataLoader(transformed_dataset_run, batch_size=1, shuffle=False, num_workers=1)
         }
@@ -511,7 +511,9 @@ class LocalisationNetwork3DMultipleLabels(object):
 
                         # Plot validation results
                         #######################################################
-                        if epoch % 1 == 0 and not plotted:
+                        if epoch % 10 == 0 and not plotted:
+
+                            plotted = True
 
                             print("....................................................................................")
 
@@ -522,19 +524,19 @@ class LocalisationNetwork3DMultipleLabels(object):
                                                       img_input[:,:,:,:,args.crop_depth//2])
 
                             # Plot logits
-                            plt.figure(figsize=(3*(self.n_labels + 1), 3))
-                            
-                            plot_range = self.n_labels + 1
-
-                            for l in range(plot_range):
-                                plt.subplot(1,plot_range,l+1)
-                                plt.imshow(out_logits_val.cpu().data.numpy()[0,l,:,:,args.crop_depth//2],
-                                           cmap='jet')
-                                plt.xticks([])
-                                plt.yticks([])
-                                plt.colorbar()
-                                
-                            plt.show()
+                            # plt.figure(figsize=(3*(self.n_labels + 1), 3))
+                            #
+                            # plot_range = self.n_labels + 1
+                            #
+                            # for l in range(plot_range):
+                            #     plt.subplot(1,plot_range,l+1)
+                            #     plt.imshow(out_logits_val.cpu().data.numpy()[0,l,:,:,args.crop_depth//2],
+                            #                cmap='jet')
+                            #     plt.xticks([])
+                            #     plt.yticks([])
+                            #     plt.colorbar()
+                            #
+                            # plt.show()
 
                             print("....................................................................................")
                         
