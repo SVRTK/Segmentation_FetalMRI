@@ -85,10 +85,10 @@ def print_networks(nets, names):
 #
 
 # Plot predictions vs gt - cropped
-def plot_img_cropped(patch_size, epoch_,
-                     real_img_crop_, fake_img_crop_, name_):
+def plot_img_cropped(args_, patch_size, epoch_,
+                     real_img_crop_, fake_img_crop_, name_, title_):
 
-    n_b = real_img_crop_.shape[1]
+    n_b = real_img_crop_.shape[0]
 
     # Figure
     plt.figure(figsize=(12, 10))
@@ -99,7 +99,7 @@ def plot_img_cropped(patch_size, epoch_,
     img_plot = torch.zeros((patch_size[0], n_b * patch_size[1]))
     for i in range(n_b):  # body and brain
         img_plot[:, i * patch_size[1]:i * patch_size[1] + patch_size[1]] = \
-            real_img_crop_[0, i, :, :].cpu().data
+            real_img_crop_[i, 0, :, :].cpu().data
     plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
     plt.colorbar()
     plt.ylabel('GT Cropped')
@@ -113,14 +113,16 @@ def plot_img_cropped(patch_size, epoch_,
     img_plot = torch.zeros((patch_size[0], n_b * patch_size[1]))
     for i in range(n_b):  # body and brain
         img_plot[:, i * patch_size[1]:i * patch_size[1] + patch_size[1]] = \
-            fake_img_crop_[0, i, :, :].cpu().data
+            fake_img_crop_[i, 0, :, :].cpu().data
     plt.imshow(img_plot.numpy(), vmin=0.0, vmax=1.0, cmap='gray')
     plt.ylabel('PR Cropped')
     plt.xticks([])
     plt.yticks([])
     plt.colorbar()
 
-    plt.show()
+    plt.savefig(args_.checkpoint_dir + '/pred_discr_' + title_ + '_E' + str(epoch_) + '.png')
+
+    # plt.show()
 
 
 # Get cropped brain and body
@@ -143,7 +145,7 @@ def get_cropped_brain_body(input_size_, output_size_, img_input_, seg_output_):
 
         def get_coords(lab):
             exists = 1
-            if np.sum(lab) == 0:
+            if np.sum(lab) < 10:
                 coords_x_, coords_y_, coords_z_ = 0, 0, 0
                 exists = 0
             else:
@@ -367,7 +369,8 @@ def plot_seg_img_labels(args_, epoch_, seg_gt_, seg_pr_, t2w_gt_):
     plt.yticks([])
     plt.colorbar()
 
-    plt.show()
+    plt.savefig(args_.checkpoint_dir + '/pred_example_E' + str(epoch_) + '.png')
+    # plt.show()
 
 
 # Plot predicted and ground truth segmentations together with image
@@ -520,17 +523,18 @@ def plot_losses_train(args, losses_train, title_plot):
     # Plot losses
     ####################
     import matplotlib.pyplot as plt
+    start_epoch = 2
 
     plt.figure(figsize=(20, 18))
     for i_, key_ in enumerate(keys_train):
         plt.subplot(6, 2, i_ + 1)
-        plt.fill_between(np.arange(1, n_epochs_train),
-                         [x - y for x, y in zip(losses_train_mean[key_][1:],
-                                                losses_train_std[key_][1:])],
-                         [x + y for x, y in zip(losses_train_mean[key_][1:],
-                                                losses_train_std[key_][1:])],
+        plt.fill_between(np.arange(start_epoch, n_epochs_train),
+                         [x - y for x, y in zip(losses_train_mean[key_][start_epoch:],
+                                                losses_train_std[key_][start_epoch:])],
+                         [x + y for x, y in zip(losses_train_mean[key_][start_epoch:],
+                                                losses_train_std[key_][start_epoch:])],
                          alpha=0.2)
-        plt.plot(np.arange(0, n_epochs_train), losses_train_mean[key_])
+        plt.plot(np.arange(start_epoch, n_epochs_train), losses_train_mean[key_][start_epoch:])
         plt.xlabel('epochs')
         plt.ylabel(key_)
         if i_ == 0:
