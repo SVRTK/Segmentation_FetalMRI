@@ -58,7 +58,7 @@ class LocalisationDataLoader(Dataset):
 
         # Augmentation
         self.to_motion = torchio.transforms.RandomMotion(degrees=2.0,
-                                                         translation=2.0,  # 3.0
+                                                         translation=1.0,  # 3.0
                                                          num_transforms=1,
                                                          p=0.25,
                                                          seed=None)
@@ -66,8 +66,8 @@ class LocalisationDataLoader(Dataset):
                                                        intensity=0.2,
                                                        p=0.2,
                                                        seed=None)
-        self.to_affine = torchio.transforms.RandomAffine(scales=(0.5, 1.5),
-                                                         degrees=(180),
+        self.to_affine = torchio.transforms.RandomAffine(scales=(0.9, 1.1),
+                                                         degrees=(90),
                                                          isotropic=True,
                                                          default_pad_value='minimum')
 
