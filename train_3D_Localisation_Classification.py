@@ -30,7 +30,7 @@ from src import networks as md
 #
 # ==================================================================================================================== #
 
-N_epochs = 100
+N_epochs = 300
 I_size = 128
 N_classes = 4
 
@@ -54,7 +54,7 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
                                       test_csv='data_localisation_3labels_uterus_test.csv',
                                       run_csv='data_localisation_3labels_uterus_test.csv',
                                       results_dir='/data/project/Localisation/wshop_data/loc3D/results-3D-3lab-loc-cls/',
-                                      checkpoint_dir='/data/project/Localisation/wshop_data/loc3D/checkpoints-3D-2lab-loc-cls/',
+                                      checkpoint_dir='/data/project/Localisation/wshop_data/loc3D/checkpoints-3D-3lab-loc-cls/',
                                       exp_name='Loc_3D',
                                       task_net='unet_3D',
                                       cls_net='cls_3D',
