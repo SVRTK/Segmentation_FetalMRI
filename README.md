@@ -1,6 +1,6 @@
-# Localisation and segmentation for fetal MRI -- under development 
+# Localisation and segmentation for fetal MRI 
 
-Solutions for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
+3D-Unet based solutions for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
 
 
 ## Contacts
