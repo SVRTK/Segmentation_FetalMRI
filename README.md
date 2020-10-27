@@ -16,7 +16,7 @@ In case of any questions regarding the code - please report an issue or contact 
 	conda activate Segmentation_FetalMRI
 
 
-## Quick how-to: running train_3D_Segmentation.py
+## Quick how-to: running train_3D_Localisation.py
 
 1. Prepare datasets for 3D localisation/segmentation - resampled (and padded) stacks and binary label masks:
 
