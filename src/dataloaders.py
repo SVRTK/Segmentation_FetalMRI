@@ -57,8 +57,8 @@ class LocalisationDataLoader(Dataset):
         self.preprocessing = Compose([to_znorm, to_rescl])
 
         # Augmentation
-        self.to_motion = torchio.transforms.RandomMotion(degrees=2.0,
-                                                         translation=1.0,  # 3.0
+        self.to_motion = torchio.transforms.RandomMotion(degrees=5.0,
+                                                         translation=2.0,  # 3.0
                                                          num_transforms=1,
                                                          p=0.25,
                                                          seed=None)
@@ -105,17 +105,22 @@ class LocalisationDataLoader(Dataset):
             dataset = torchio.SubjectsDataset([subject])
 
         else:
-            img_name = os.path.join(self.input_folder,
-                                    self.data_file.iloc[item, 0])
-            lab_name = os.path.join(self.input_folder,
-                                    self.data_file.iloc[item, 1])
+            img_name = os.path.join(self.input_folder, self.data_file.iloc[item, 0])
+                                    
+            subject_dict = {'t2w': torchio.Image(img_name, torchio.INTENSITY)}
+                                    
+            lab_name = os.path.join(self.input_folder, self.data_file.iloc[item, 1])
+            
+            subject_dict['label' + str(1)] = torchio.Image(lab_name[0], torchio.LABEL)
 
             # Read data:
             subject = torchio.Subject(
                 t2w=torchio.Image(img_name, torchio.INTENSITY),
                 label=torchio.Image(lab_name, torchio.LABEL),
             )
-            dataset = torchio.SubjectsDataset([subject])
+            dataset = torchio.ImagesDataset([subject])
+
+
 
         # Pre process subject
         transformed_subj = self.preprocessing(dataset[0])
@@ -145,13 +150,17 @@ class LocalisationDataLoader(Dataset):
 
         img_aff = transformed_subj['t2w']['affine']
         subj_name = self.data_file.iloc[item, 0].split('.nii')[0]
+        
+        case_id = self.data_file.iloc[item, 0].split('/')[-2]
 
         # Create sample_img:
         sample = {'image': img_,
                   'lab': lab_,
                   'name': subj_name,
+                  'idd': case_id,
                   'img_aff': img_aff,
                   'seg_aff': lab_aff}
+
 
         # Transform
         if self.transform:
@@ -297,6 +306,7 @@ class RandomCrop3D(object):
         return {'image': image,
                 'lab': lab,
                 'name': sample['name'],
+                'idd': sample['idd'],
                 'img_aff': sample['img_aff'],
                 'seg_aff': sample['seg_aff']}
 
@@ -319,6 +329,7 @@ class ToTensor(object):
         sample = {'image': (torch.from_numpy(image_)).float(),
                   'lab': (torch.from_numpy(lab_)).float(),
                   'name': sample['name'],
+                  'idd': sample['idd'],
                   'img_aff': sample['img_aff'],
                   'seg_aff': sample['seg_aff']}
 
