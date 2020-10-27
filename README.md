@@ -49,3 +49,12 @@ In case of any questions regarding the code - please report an issue or contact 
     - ...
 
 
+## License
+
+The SVRTK Fetal MRI Segmentation package is distributed under the terms of the
+[Apache License Version 2](http://www.apache.org/licenses/LICENSE-2.0). The license enables usage of SVRTK in both commercial and non-commercial applications, without restrictions on the licensing applied to the combined work.
+
+
+## Citation and acknowledgements
+
+In case you found SVRTK Fetal MRI Segmentation useful please give appropriate credit to the software by providing the corresponding link to our github repository.
