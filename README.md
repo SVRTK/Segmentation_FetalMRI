@@ -2,6 +2,7 @@
 
 3D-Unet based solutions for localisation and segmentation in fetal MRI stacks or motion-corrected volumes. 
 
+![GitHub Logo](whole-body-btfe-example.png)
 
 ## Contacts
 
