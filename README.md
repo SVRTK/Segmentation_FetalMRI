@@ -34,7 +34,7 @@ In case of any questions regarding the code - please report an issue or contact 
     res-datasets/100034/stack.nii.gz    res-datasets/100034/mask-1.nii.gz    res-datasets/100034/mask-2.nii.gz   
     ...   
 
-3. Modify train_3D_Segmentation.py:
+3. Modify train_3D_Localisation.py:
 
     - root_dir=<your_own_path>
     - csv_dir=<your_own_path>
