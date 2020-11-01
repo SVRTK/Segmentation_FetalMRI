@@ -1,7 +1,7 @@
 
 # SVRTK : SVR reconstruction based on MIRTK and CNN-based processing for fetal MRI
 #
-# Copyright 2018-2020 King's College London
+# Copyright 2018-2020 King's College London 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -693,8 +693,8 @@ class LocalisationNetwork3DMultipleLabels(object):
 
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
-                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
+                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
                                 
                 # Save as nib file - SEG GT
                 gt_lab = nib.Nifti1Image(seg_gt_, img_tmp_info.affine, img_tmp_info.header)
@@ -712,8 +712,8 @@ class LocalisationNetwork3DMultipleLabels(object):
 
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
-                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
+                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
                                 
                 # Save as nib file - SEG GT
                 gt_lab = nib.Nifti1Image(seg_gt_, img_tmp_info.affine, img_tmp_info.header)
@@ -927,12 +927,12 @@ class LocalisationNetwork3DMultipleLabels(object):
                 
 
             # # # # # # # # # # # # # # # # # # # # # # # #
-            def save_nii_img_seg(args_, name_, img_gt_, seg_pr_, img_aff_, seg_aff_, ind, case_id_):
+            def save_nii_img_seg(args_, name_, img_gt_, seg_pr_, img_aff_, ind, case_id_):
 
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
-                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
+                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
                                 
                                 
                 # Save as nib file - SEG PR
@@ -940,13 +940,14 @@ class LocalisationNetwork3DMultipleLabels(object):
                 nib.save(pr_lab, args_.results_dir + name_ + '_seg_pr-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
 
 
+
             # # # # # # # # # # # # # # # # # # # # # # # #
-            def save_nii_img_seg_prob(args_, name_, img_gt_, seg_pr_, img_aff_, seg_aff_, prob_out_, n_labels_, ind, case_id_):
+            def save_nii_img_seg_prob(args_, name_, img_gt_, seg_pr_, img_aff_, prob_out_, n_labels_, ind, case_id_):
 
                 # Save as nib file - IMG GT
                 gt_img = nib.Nifti1Image(img_gt_, img_aff_)
-                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
-                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + str(case_id_) + '.nii.gz')
+                nib.save(gt_img, args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
+                img_tmp_info = nib.load(args_.results_dir + name_ + '_img-' + str(ind) + '-' + str(case_id_) + '.nii.gz')
                                 
                 # Save as nib file - SEG PR
                 pr_lab = nib.Nifti1Image(seg_pr_, img_tmp_info.affine, img_tmp_info.header)
@@ -958,19 +959,15 @@ class LocalisationNetwork3DMultipleLabels(object):
                     nib.save(prob_out, args_.results_dir + name_ + '_pr-' +  str(l+1) + ' _ ' + str(ind) + '-' + str(case_id_) + '.nii.gz')
 
 
-
-
-
-
             name = data_point['name'][0].split('/')[0] + '_' + data_point['name'][0].split('/')[-1]
             img_aff = data_point['img_aff'][0, ...].numpy().astype(np.float32)
             seg_prob = np.argmax(seg_pred_val[0, :, ...].cpu().data.numpy(), axis=0).astype(int)
 
 
   
-#            save_nii_img_seg(args, name, img_gt, seg_pr, img_aff, i)
+            save_nii_img_seg(args, name, img_gt, seg_pr, img_aff, i, case_id)
             
-            save_nii_img_seg_prob(args, name, img_gt, seg_pr, img_aff, out_prob, self.n_labels, i)
+#            save_nii_img_seg_prob(args, name, img_gt, seg_pr, img_aff, out_prob, self.n_labels, i)
             
             
   
