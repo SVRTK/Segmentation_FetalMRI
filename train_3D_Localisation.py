@@ -61,6 +61,9 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
 
 args.gpu_ids = [0]
 
+
+# RUN training
+
 if args.training:
     print("Training")
     model = md.LocalisationNetwork3DMultipleLabels(args)
@@ -73,7 +76,8 @@ if args.training:
     ####################
     plot_losses_train(args, losses_train, 'fig_losses_train_E')
 
-
+    
+# TEST to compare with the ground truth results
 
 if args.testing:
     print("Testing")
@@ -84,7 +88,8 @@ if args.testing:
     model.test(args)
 
 
-
+# RUN with empty masks - to generate new ones
+    
 if args.running:
     print("Running")
     model = md.LocalisationNetwork3DMultipleLabels(args)
