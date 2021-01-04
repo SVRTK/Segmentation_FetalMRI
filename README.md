@@ -55,7 +55,7 @@ Modify train_3D_Localisation.py:
     - ...
 
 
-Train CNN:
+Train CNN and run testing:
 
 	python train_3D_Localisation.py
 
