@@ -32,7 +32,7 @@ from src import networks as md
 
 N_epochs = 300
 I_size = 128
-N_classes = 4
+N_classes = 3+1
 
 
 # # # Prepare arguments
@@ -52,7 +52,7 @@ args = ArgumentsTrainTestLocalisation(epochs=N_epochs,
                                       train_csv='data_localisation_3labels_uterus_train.csv',
                                       valid_csv='data_localisation_3labels_uterus_valid.csv',
                                       test_csv='data_localisation_3labels_uterus_test.csv',
-                                      run_csv='data_localisation_3labels_uterus_test.csv',
+                                      run_csv='data_localisation_3labels_uterus_run.csv',
                                       results_dir='/data/project/Localisation/wshop_data/loc3D/results-3D-3lab-loc/',
                                       checkpoint_dir='/data/project/Localisation/wshop_data/loc3D/checkpoints-3D-3lab-loc/',
                                       exp_name='Loc_3D',
@@ -70,7 +70,7 @@ if args.training:
 
     # Run train
     ####################
-    losses_train = model.train(args)
+    losses_train = model.train(args,0)
 
     # Plot losses
     ####################
@@ -85,10 +85,10 @@ if args.testing:
 
     # Run inference
     ####################
-    model.test(args)
+    model.test(args,1)
 
 
-# RUN with empty masks - to generate new ones
+# RUN with empty masks - to generate new ones (practical application)
     
 if args.running:
     print("Running")
@@ -96,4 +96,6 @@ if args.running:
 
     # Run inference
     ####################
-    model.run(args)
+    model.run(args,1)
+
+    
