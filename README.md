@@ -18,13 +18,24 @@ In case of any questions regarding the code - please report an issue or contact 
 
 ## Prepare datasets
 
-Use prepare-for-cnn function from SVRTK to resample & pad all files to the same grid (128x128x128):
+Use prepare-for-cnn function from SVRTK to resample & pad all files to the same grid (128x128x128) for training, validation and testing:
 
 	res=128
 	all_num_lab=3
-	number_of_stacks=$(ls ${input_file_folder}/*.nii* | wc -l)
-	stack_names=$(ls ${input_file_folder}/*.nii*)
-	${mirtk_path}/mirtk prepare-for-cnn res-files stack-files train-cnn-files.csv train-info-summary.csv ${res} ${number_of_stacks} $(echo $stack_names)  ${all_num_lab} 0 
+	
+	train_number_of_stacks=$(ls ${input_train_file_folder}/*.nii* | wc -l)
+	train_stack_names=$(ls ${input_train_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn train-res-files train-stack-files train-cnn-files.csv train-info-summary.csv ${res} ${train_number_of_stacks} $(echo $train_stack_names)  ${all_num_lab} 0
+	
+	valid_number_of_stacks=$(ls ${input_valid_file_folder}/*.nii* | wc -l)
+	valid_stack_names=$(ls ${input_valid_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn valid-res-files valid-stack-files valid-cnn-files.csv valid-info-summary.csv ${res} ${valid_number_of_stacks} $(echo $valid_stack_names)  ${all_num_lab} 0
+
+	test_number_of_stacks=$(ls ${input_test_file_folder}/*.nii* | wc -l)
+	test_stack_names=$(ls ${input_test_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn test-res-files test-stack-files test-cnn-files.csv test-info-summary.csv ${res} ${test_number_of_stacks} $(echo $test_stack_names)  ${all_num_lab} 0
+
+
 
 
 ## Perform training
