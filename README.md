@@ -9,44 +9,46 @@
 In case of any questions regarding the code - please report an issue or contact Irina Grigorescu. 
 
 
-## Quick how-to: setup
+## Setup
 
 	conda env create -f environment.yml
 	conda env list
 	conda activate Segmentation_FetalMRI
 
 
-## Quick how-to: running train_3D_Localisation.py
+## Prepare datasets
 
-1. Prepare datasets for 3D localisation/segmentation - resampled (and padded) stacks and binary label masks:
+Use prepare-for-cnn function from SVRTK to resample & pad all files to the same grid (128x128x128):
 
-	i_size=128   
-	mkdir res_datasets/${case_id}   
-	mirtk pad-3d org_datasets/${case_id}/stack.nii.gz res_datasets/${case_id}/stack.nii.gz ${i_size} 1   
-	mirtk pad-3d org_datasets/${case_id}/mask-1.nii.gz res_datasets/${case_id}/mask-1.nii.gz ${i_size} 0   
-	mirtk pad-3d org_datasets/${case_id}/mask-2.nii.gz res_datasets/${case_id}/mask-2.nii.gz ${i_size} 0   
-	...
+	res=128
+	all_num_lab=3
+	number_of_stacks=$(ls ${input_file_folder}/*.nii* | wc -l)
+	stack_names=$(ls ${input_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn res-files stack-files train-cnn-files.csv train-info-summary.csv ${res} ${number_of_stacks} $(echo $stack_names)  ${all_num_lab} 0 
 
-2. Prepare .csv files for training, validation, testing and running (see the example files):
 
-    t2w                                       lab1                                       lab2   
-    res-datasets/100027/stack.nii.gz    res-datasets/100027/mask-1.nii.gz    res-datasets/100027/mask-2.nii.gz   
-    res-datasets/100034/stack.nii.gz    res-datasets/100034/mask-1.nii.gz    res-datasets/100034/mask-2.nii.gz   
-    ...   
-
-3. Modify train_3D_Localisation.py:
+## Perform training
+ 
+Modify train_3D_Localisation.py:
 
     - root_dir=<your_own_path>
     - csv_dir=<your_own_path>
-    - train_csv='data_localisation_2labels_train.csv'  # example
-    - valid_csv='data_localisation_2labels_valid.csv'  # example
-    - test_csv='data_localisation_2labels_test.csv'    # example
-    -  run_csv='data_localisation_2labels_run.csv'    # example
+    - train_csv='train-cnn-files.csv'  # see example
+    - valid_csv='valid-cnn-files.csv'  
+    - test_csv='test-cnn-files.csv'    
+    -  run_csv='trun-cnn-files.csv'    
     - results_dir=<your_own_path>
     - checkpoint_dir=<your_own_path>
-    - I_size=<image_size>
-    - N_classes=<number_of_labels+1(bg_label)>
+    - I_size=<res>
+    - N_classes=<all_num_lab + 1 (bg_label)>
     - ...
+
+
+Train CNN:
+
+	python train_3D_Localisation.py
+
+
 
 
 ## License
