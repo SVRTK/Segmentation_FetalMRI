@@ -25,15 +25,22 @@ Use prepare-for-cnn function from SVRTK to resample & pad all files to the same 
 	
 	train_number_of_stacks=$(ls ${input_train_file_folder}/*.nii* | wc -l)
 	train_stack_names=$(ls ${input_train_file_folder}/*.nii*)
-	${mirtk_path}/mirtk prepare-for-cnn train-res-files train-stack-files train-cnn-files.csv train-info-summary.csv ${res} ${train_number_of_stacks} $(echo $train_stack_names)  ${all_num_lab} 0
+	train_mask_names=$(ls ${input_train__mask_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn train-res-files train-stack-files train-cnn-files.csv train-info-summary.csv ${res} ${train_number_of_stacks} $(echo $train_stack_names)  ${all_num_lab} 1 $(echo $train_mask_names)
 	
 	valid_number_of_stacks=$(ls ${input_valid_file_folder}/*.nii* | wc -l)
 	valid_stack_names=$(ls ${input_valid_file_folder}/*.nii*)
-	${mirtk_path}/mirtk prepare-for-cnn valid-res-files valid-stack-files valid-cnn-files.csv valid-info-summary.csv ${res} ${valid_number_of_stacks} $(echo $valid_stack_names)  ${all_num_lab} 0
+	valid_mask_names=$(ls ${input_valid_mask_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn valid-res-files valid-stack-files valid-cnn-files.csv valid-info-summary.csv ${res} ${valid_number_of_stacks} $(echo $valid_stack_names)  ${all_num_lab} 1 $(echo $valid_mask_names)
 
 	test_number_of_stacks=$(ls ${input_test_file_folder}/*.nii* | wc -l)
 	test_stack_names=$(ls ${input_test_file_folder}/*.nii*)
-	${mirtk_path}/mirtk prepare-for-cnn test-res-files test-stack-files test-cnn-files.csv test-info-summary.csv ${res} ${test_number_of_stacks} $(echo $test_stack_names)  ${all_num_lab} 0
+	test_mask_names=$(ls ${input_test_mask_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn test-res-files test-stack-files test-cnn-files.csv test-info-summary.csv ${res} ${test_number_of_stacks} $(echo $test_stack_names)  ${all_num_lab} 1 $(echo $test_mask_names)
+	
+	run_number_of_stacks=$(ls ${input_run_file_folder}/*.nii* | wc -l)
+	run_stack_names=$(ls ${input_run_file_folder}/*.nii*)
+	${mirtk_path}/mirtk prepare-for-cnn run-res-files run-stack-files run-cnn-files.csv run-info-summary.csv ${res} ${run_number_of_stacks} $(echo $run_stack_names)  ${all_num_lab} 0 
 
 
 
@@ -47,7 +54,7 @@ Modify train_3D_Localisation.py:
     - train_csv='train-cnn-files.csv'  # see example
     - valid_csv='valid-cnn-files.csv'  
     - test_csv='test-cnn-files.csv'    
-    -  run_csv='trun-cnn-files.csv'    
+    -  run_csv='run-cnn-files.csv'    
     - results_dir=<your_own_path>
     - checkpoint_dir=<your_own_path>
     - I_size=<res>
