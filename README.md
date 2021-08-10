@@ -6,7 +6,7 @@
 
 ## Contacts
 
-In case of any questions regarding the code - please report an issue or contact Irina Grigorescu. 
+In case of any questions regarding the code - please report an issue or contact the main author Irina Grigorescu. 
 
 
 ## Setup
