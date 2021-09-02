@@ -56,3 +56,4 @@ torchio==0.17.7
 torchvision # TAR
 tqdm
 pycocotools
+pydicom
