@@ -102,7 +102,7 @@ class LocalisationDataLoader(Dataset):
 
             # Read data:
             subject = torchio.Subject(subject_dict)
-            dataset = torchio.SubjectsDataset([subject])
+            dataset = torchio.ImagesDataset([subject])
 
         else:
             img_name = os.path.join(self.input_folder, self.data_file.iloc[item, 0])
