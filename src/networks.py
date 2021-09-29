@@ -27,7 +27,7 @@
 # ==================================================================================================================== #
 
 
-import itertools
+import itertools 
 import functools
 import os
 import time
@@ -316,14 +316,19 @@ class LocalisationNetwork3DMultipleLabels(object):
         if not os.path.isdir(args.results_dir):
             os.makedirs(args.results_dir)
 
+
         # Try loading checkpoint
         #####################################################
         try:
-            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir), args.gpu_cpu_mode)
             self.start_epoch = ckpt['epoch']
             self.losses_train = ckpt['losses_train']
-            self.Loc.load_state_dict(ckpt['Loc'])
-            self.l_optimizer.load_state_dict(ckpt['l_optimizer'])
+            if args.gpu_cpu_mode < 0:
+                self.Loc.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Loc'].items()})
+                self.l_optimizer.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['l_optimizer'].items()})
+            else:
+                self.Loc.load_state_dict(ckpt['Loc'])
+                self.l_optimizer.load_state_dict(ckpt['l_optimizer'])
         except:
             print(' [*] No checkpoint!')
             self.start_epoch = 0
@@ -448,8 +453,8 @@ class LocalisationNetwork3DMultipleLabels(object):
 
 
                     # Create cuda variables:
-                    img_input = utils.cuda(img_input)
-                    seg_output = utils.cuda(torch.cat(seg_output, dim=1))
+                    img_input = utils.cuda(img_input, args.gpu_ids)
+                    seg_output = utils.cuda(torch.cat(seg_output, dim=1), args.gpu_ids)
                     
 
                     # TRAIN
@@ -612,9 +617,12 @@ class LocalisationNetwork3DMultipleLabels(object):
         # Try loading checkpoint
         #####################################################
         try:
-            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir), args.gpu_cpu_mode)
             self.start_epoch = ckpt['epoch']
-            self.Loc.load_state_dict(ckpt['Loc'])
+            if args.gpu_cpu_mode < 0:
+                self.Loc.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Loc'].items()})
+            else:
+                self.Loc.load_state_dict(ckpt['Loc'])
         except:
             print('[ERROR] Could not find checkpoint!')
 
@@ -657,8 +665,8 @@ class LocalisationNetwork3DMultipleLabels(object):
             
 
             # Create cuda variables:
-            img_input = utils.cuda(img_input)
-            seg_output = utils.cuda(torch.cat(seg_output, dim=1))
+            img_input = utils.cuda(img_input, args.gpu_ids)
+            seg_output = utils.cuda(torch.cat(seg_output, dim=1), args.gpu_ids)
             
 
             with torch.no_grad():
@@ -865,9 +873,12 @@ class LocalisationNetwork3DMultipleLabels(object):
         # Try loading checkpoint
         #####################################################
         try:
-            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir), args.gpu_cpu_mode)
             self.start_epoch = ckpt['epoch']
-            self.Loc.load_state_dict(ckpt['Loc'])
+            if args.gpu_cpu_mode < 0:
+                self.Loc.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Loc'].items()})
+            else:
+                self.Loc.load_state_dict(ckpt['Loc'])
         except:
             print('[ERROR] Could not find checkpoint!')
 
@@ -890,7 +901,7 @@ class LocalisationNetwork3DMultipleLabels(object):
 #            seg_current = data_point['lab']
                        
             # Create cuda variables:
-            img_input = utils.cuda(img_input)
+            img_input = utils.cuda(img_input, args.gpu_ids)
             
 
             case_name = '-'.join(data_point['name'])
@@ -921,7 +932,9 @@ class LocalisationNetwork3DMultipleLabels(object):
             # # # # # # # # # # # # # # # # # # # # # # # #
             img_gt = img_input[0, 0, ...].cpu().data.numpy()
             seg_pr = np.argmax(seg_pred_val[0, :, ...].cpu().data.numpy(), axis=0).astype(int)
-            out_prob = self.Loc(img_input)
+            
+            if mode > 0 : 
+                out_prob = self.Loc(img_input)
             
             
             
@@ -977,7 +990,9 @@ class LocalisationNetwork3DMultipleLabels(object):
 
             name = data_point['name'][0].split('/')[0] + '_' + data_point['name'][0].split('/')[-1]
             img_aff = data_point['img_aff'][0, ...].numpy().astype(np.float32)
-            seg_prob = np.argmax(seg_pred_val[0, :, ...].cpu().data.numpy(), axis=0).astype(int)
+            
+            if mode > 0 : 
+                seg_prob = np.argmax(seg_pred_val[0, :, ...].cpu().data.numpy(), axis=0).astype(int)
 
 
 
@@ -1127,13 +1142,21 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
         # Try loading checkpoint
         #####################################################
         try:
-            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir), args.gpu_cpu_mode)
             self.start_epoch = ckpt['epoch']
             self.losses_train = ckpt['losses_train']
-            self.Loc.load_state_dict(ckpt['Loc'])
-            self.Dis.load_state_dict(ckpt['Dis'])
-            self.l_optimizer.load_state_dict(ckpt['l_optimizer'])
-            self.d_optimizer.load_state_dict(ckpt['d_optimizer'])
+
+            if args.gpu_cpu_mode < 0:
+                self.Loc.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Loc'].items()})
+                self.Dis.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Dis'].items()})
+                self.l_optimizer.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['l_optimizer'].items()})
+                self.d_optimizer.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['d_optimizer'].items()}) 
+            else:
+                self.Loc.load_state_dict(ckpt['Loc'])
+                self.Dis.load_state_dict(ckpt['Dis'])
+                self.l_optimizer.load_state_dict(ckpt['l_optimizer'])
+                self.d_optimizer.load_state_dict(ckpt['d_optimizer'])
+
         except:
             print(' [*] No checkpoint!')
             self.start_epoch = 0
@@ -1259,8 +1282,8 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                     seg_output = torch.cat(seg_output, dim=1)
 
                     # Create cuda variables:
-                    img_input = utils.cuda(img_input)
-                    seg_output = utils.cuda(seg_output)
+                    img_input = utils.cuda(img_input, args.gpu_ids)
+                    seg_output = utils.cuda(seg_output, args.gpu_ids)
 
                     # Prepare data for discriminator
                     found_real = False
@@ -1297,7 +1320,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                             #                                       seg_cropped_output.type(torch.float32)), dim=1))
                             real_img_crop = utils.cuda(
                                 torch.mul(img_cropped_input.type(torch.float32),  # real for discriminator
-                                          seg_cropped_output.type(torch.float32)))
+                                          seg_cropped_output.type(torch.float32)), args.gpu_ids)
 
                             # If any of the masks is not present, do not train the discriminator
                             # Because we do not want the discriminator to see bad examples
@@ -1380,12 +1403,12 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                                                                    patch_coords, id_c=1),  # brain
                                                                  align_corners=True)), dim=1)
                         # fake_img_crop = utils.cuda(Variable(torch.cat((fake_img_crop, fake_seg_crop), dim=1)))
-                        fake_img_crop = utils.cuda(Variable(torch.mul(fake_img_crop, fake_seg_crop)))
+                        fake_img_crop = utils.cuda(Variable(torch.mul(fake_img_crop, fake_seg_crop)), args.gpu_ids)
 
                         # Adversarial losses
                         ###################################################
                         img_fake_dis = self.Dis(fake_img_crop)
-                        real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
+                        real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())), args.gpu_ids)
                         adv_loss = self.MSE(img_fake_dis, real_label)
 
                         # Total loss for segmentation
@@ -1412,8 +1435,8 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                         #################################################
                         img_fake_dis = self.Dis(fake_img_crop)
                         img_real_dis = self.Dis(real_img_crop)
-                        real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
-                        fake_label = utils.cuda(Variable(torch.zeros(img_fake_dis.size())))
+                        real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())), args.gpu_ids)
+                        fake_label = utils.cuda(Variable(torch.zeros(img_fake_dis.size())), args.gpu_ids)
 
                         # Discriminator losses
                         ##################################################
@@ -1484,12 +1507,12 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                                                                      align_corners=True)), dim=1)
 
                             # fake_img_crop = utils.cuda(torch.cat((fake_img_crop, fake_seg_crop), dim=1))
-                            fake_img_crop = utils.cuda(torch.mul(fake_img_crop, fake_seg_crop))
+                            fake_img_crop = utils.cuda(torch.mul(fake_img_crop, fake_seg_crop), args.gpu_ids)
 
                             # Adversarial losses
                             ###################################################
                             img_fake_dis = self.Dis(fake_img_crop)
-                            real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
+                            real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())), args.gpu_ids)
                             adv_loss = self.MSE(img_fake_dis, real_label)
 
                             # Total loss for segmentation
@@ -1505,8 +1528,8 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                             #################################################
                             img_fake_dis = self.Dis(fake_img_crop)
                             img_real_dis = self.Dis(real_img_crop)
-                            real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())))
-                            fake_label = utils.cuda(Variable(torch.zeros(img_fake_dis.size())))
+                            real_label = utils.cuda(Variable(torch.ones(img_fake_dis.size())), args.gpu_ids)
+                            fake_label = utils.cuda(Variable(torch.zeros(img_fake_dis.size())), args.gpu_ids)
 
                             # Discriminator losses
                             ##################################################
@@ -1628,9 +1651,12 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
         # Try loading checkpoint
         #####################################################
         try:
-            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir), args.gpu_cpu_mode)
             self.start_epoch = ckpt['epoch']
-            self.Loc.load_state_dict(ckpt['Loc'])
+            if args.gpu_cpu_mode < 0:
+                self.Loc.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Loc'].items()})
+            else: 
+                self.Loc.load_state_dict(ckpt['Loc'])
         except:
             print('[ERROR] Could not find checkpoint!')
 
@@ -1661,8 +1687,8 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
                 seg_output.append(seg_current[:, [l], ...])
 
             # Create cuda variables:
-            img_input = utils.cuda(img_input)
-            seg_output = utils.cuda(torch.cat(seg_output, dim=1))
+            img_input = utils.cuda(img_input, args.gpu_ids)
+            seg_output = utils.cuda(torch.cat(seg_output, dim=1), args.gpu_ids)
 
             with torch.no_grad():
                 # Forward pass through UNet
@@ -1847,9 +1873,12 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
         # Try loading checkpoint
         #####################################################
         try:
-            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir))
+            ckpt = utils.load_checkpoint('%s/latest.ckpt' % (args.checkpoint_dir), args.gpu_cpu_mode)
             self.start_epoch = ckpt['epoch']
-            self.Loc.load_state_dict(ckpt['Loc'])
+            if args.gpu_cpu_mode < 0:
+                self.Loc.load_state_dict({k.replace('module.', ''): v for k, v in ckpt['Loc'].items()})
+            else: 
+                self.Loc.load_state_dict(ckpt['Loc'])
         except:
             print('[ERROR] Could not find checkpoint!')
 
@@ -1869,7 +1898,7 @@ class LocalisationClassificationNetwork3DMultipleLabels(object):
             #            seg_current = data_point['lab']
 
             # Create cuda variables:
-            img_input = utils.cuda(img_input)
+            img_input = utils.cuda(img_input, args.gpu_ids)
 
             with torch.no_grad():
                 # Forward pass through UNet

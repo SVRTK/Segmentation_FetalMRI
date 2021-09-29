@@ -25,7 +25,7 @@
 
 import copy
 import os
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 from scipy.ndimage import distance_transform_edt, distance_transform_cdt, gaussian_filter
 import numpy as np
 import torch
@@ -38,12 +38,14 @@ def mkdir(paths):
             os.makedirs(path)
 
 # To make cuda tensor
-def cuda(xs):
-    if torch.cuda.is_available():
+def cuda(xs, gpu_ids=[]):
+    if torch.cuda.is_available() and len(gpu_ids) > 0:
         if not isinstance(xs, (list, tuple)):
             return xs.cuda()
         else:
             return [x.cuda() for x in xs]
+    else:
+        return xs
 
 
 # To save the checkpoint
@@ -52,7 +54,13 @@ def save_checkpoint(state, save_path):
 
 
 # To load the checkpoint
-def load_checkpoint(ckpt_path, map_location=None):
+def load_checkpoint(ckpt_path, gpu_cpu_mode):
+
+    if gpu_cpu_mode < 0:
+        map_location=torch.device('cpu')
+    else:
+        map_location=None
+
     ckpt = torch.load(ckpt_path, map_location=map_location)
     print(' [*] Loading checkpoint from %s succeed!' % ckpt_path)
     return ckpt
@@ -582,6 +590,7 @@ class ArgumentsTrainTestLocalisation():
                  exp_name='test',
                  task_net='unet_3D',
                  cls_net='cls_3D',
+                 gpu_cpu_mode=-1,
                  n_classes=2):
 
         self.epochs = epochs
@@ -609,5 +618,6 @@ class ArgumentsTrainTestLocalisation():
         self.root_dir = root_dir
         self.task_net = task_net
         self.cls_net = cls_net
+        self.gpu_cpu_mode = gpu_cpu_mode
         self.n_classes = n_classes
 
