@@ -14,6 +14,7 @@ results_path = sys.argv[4]
 csv_file = sys.argv[5]
 res = int(sys.argv[6])
 cl_num = int(sys.argv[7])
+input_gpu_cpu_mode = int(sys.argv[8])
 
 
 #print(src_path)
@@ -24,23 +25,13 @@ cl_num = int(sys.argv[7])
 #print(res)
 #print(cl_num)
 
-# TR17 version checks
 
-import torch
-import torchvision
-import pycocotools
-
-print("torch version = ", torch.__version__)
-print("torchvision version = ", torchvision.__version__)
-print("torch CUDA version = ", torch.version.cuda)
-print("torch cuDNN version = ", torch.backends.cudnn.version())
-print("torch cuDNN is_available = ", torch.backends.cudnn.is_available())
-print("")
 
 os.chdir(src_path)
 
 
 
+input_gpu_cpu_mode=-1
 
 from src.utils import ArgumentsTrainTestLocalisation, plot_losses_train
 from src import networks as md
@@ -50,7 +41,7 @@ from src import networks as md
 os.chdir(files_path)
 
 
-n_epochs = 300
+n_epochs = 1000
 all_cl_num = cl_num + 1
 
 args = ArgumentsTrainTestLocalisation(epochs=n_epochs,
@@ -74,11 +65,17 @@ args = ArgumentsTrainTestLocalisation(epochs=n_epochs,
                                       checkpoint_dir=check_path,
                                       exp_name='Loc_3D',
                                       task_net='unet_3D',
+                                      gpu_cpu_mode=input_gpu_cpu_mode,
                                       n_classes=all_cl_num)
 
 
+if input_gpu_cpu_mode < 0:
+    args.gpu_ids = []
+else:
+    args.gpu_ids = [0]
 
-args.gpu_ids = [0]
+
+args.gpu_ids = []
 
 model = md.LocalisationNetwork3DMultipleLabels(args)
 model.run(args,0)

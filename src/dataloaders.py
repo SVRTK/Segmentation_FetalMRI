@@ -66,8 +66,27 @@ class LocalisationDataLoader(Dataset):
                                                        intensity=0.2,
                                                        p=0.2,
                                                        seed=None)
+        self.to_bias = torchio.transforms.RandomBiasField(coefficients = 0.75,
+                                                          order= 3,
+                                                          p= 1.0)
+
+
+        self.to_blur = torchio.transforms.RandomBlur(std = (0., 4.),
+                                                     p = 1)
+                                                     
+                                                     
+        self.to_ghosting = torchio.transforms.RandomGhosting(num_ghosts = (4, 10),
+                                                             axes = (0, 1, 2),
+                                                             intensity = (0.5, 1),
+                                                             restore = 0.02, p = 1.)
+
+                                                       
+        self.to_ffd = torchio.transforms.RandomElasticDeformation(num_control_points=(7, 7, 7),
+                                                       locked_borders=2)
+
+
         self.to_affine = torchio.transforms.RandomAffine(scales=(0.9, 1.1),
-                                                         degrees=(90),
+                                                         degrees=(180),
                                                          isotropic=True,
                                                          default_pad_value='minimum')
 
