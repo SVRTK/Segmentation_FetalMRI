@@ -31,8 +31,6 @@ os.chdir(src_path)
 
 
 
-input_gpu_cpu_mode=-1
-
 from src.utils import ArgumentsTrainTestLocalisation, plot_losses_train
 from src import networks as md
 
@@ -74,8 +72,6 @@ if input_gpu_cpu_mode < 0:
 else:
     args.gpu_ids = [0]
 
-
-args.gpu_ids = []
 
 model = md.LocalisationNetwork3DMultipleLabels(args)
 model.run(args,0)
